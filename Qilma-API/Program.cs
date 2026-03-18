@@ -1,3 +1,5 @@
+using Qilma_API.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -6,6 +8,9 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
+
+// Register the services for dependency injection
+builder.Services.AddScoped<IUserService, UserService>();
 
 var app = builder.Build();
 
