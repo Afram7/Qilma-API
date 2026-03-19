@@ -19,9 +19,17 @@ public class UserService : IUserService
     public UserService(UserValidator userValidator){
         _userValidator = userValidator;
     }
+
+    // Should be async when using database
     private bool IsEmailTaken(string email)
     {
         return _users.Any(user => user.Email == email);
+    }
+
+    private async Task<string> hashPassword(string password)
+    {
+        string hashedPassword = await Task.Run(() => BC.EnhancedHashPassword(password, 13));
+        return hashedPassword;
     }
 
     public async Task<CreateUserResult> CreateUserAsync(CreateUserDTO newUser)
@@ -36,6 +44,7 @@ public class UserService : IUserService
                 ErrorMessage = validation.errorMessage
             };
         }
+
         if (IsEmailTaken(newUser.Email))
         {
             return new CreateUserResult
@@ -47,13 +56,14 @@ public class UserService : IUserService
 
         try
         {
+            string hashedPassword = await hashPassword(newUser.Password);
             var userModel = new UserModel
             {
                 UserId = _users.Count + 1,
                 Name = newUser.Name,
                 Age = newUser.Age,
                 Email = newUser.Email,
-                Password = newUser.Password
+                Password = hashedPassword
             };
             _users.Add(userModel);
             return new CreateUserResult
