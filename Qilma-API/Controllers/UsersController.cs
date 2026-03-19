@@ -19,7 +19,19 @@ public class UsersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserDTO newUser)
     {
-        var createdUser = await _userService.CreateUserAsync(newUser);
-        return Ok(createdUser); // Temporary
+        var result = await _userService.CreateUserAsync(newUser);
+        if (result.Failed)
+        {
+            return StatusCode(500, result.ErrorMessage);
+        }
+        if (!result.IsValid)
+        {
+            return BadRequest(result.ErrorMessage);
+        }
+        if (result.Conflict)
+        {
+            return Conflict(result.ErrorMessage);
+        }
+        return Created("" ,result.User);
     }
 }

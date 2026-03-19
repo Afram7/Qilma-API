@@ -5,5 +5,5 @@ namespace Qilma_API.Services;
 public interface IUserService
 {
     // Create a new user
-    Task<UserDTO> CreateUserAsync(CreateUserDTO user);
+    Task<CreateUserResult> CreateUserAsync(CreateUserDTO user);
 }

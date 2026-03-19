@@ -1,4 +1,5 @@
 using Qilma_API.Services;
+using Qilma_API.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,8 +10,9 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
 
-// Register the services for dependency injection
+// Dependency Injection
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddTransient<UserValidator>();
 
 var app = builder.Build();
 
