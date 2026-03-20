@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Qilma_API.DTOs;
 using Qilma_API.Services;
@@ -32,6 +33,24 @@ public class UsersController : ControllerBase
         {
             return Conflict(result.ErrorMessage);
         }
-        return Created("" ,result.User); // temporary
+        return CreatedAtAction(nameof(GetUserById), new { id = result.User!.UserId }, result.User);
+    }
+
+
+    // [Authorize] attribute is commented out for testing purposes, should be re-enabled when authentication is implemented
+    // [Authorize]
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetUserById(int id)
+    {
+        var result = await _userService.GetUserByIdAsync(id);
+        if (result.Failed)
+        {
+            return StatusCode(500, result.ErrorMessage);
+        }
+        if (result.NotFound)
+        {
+            return NotFound(result.ErrorMessage);
+        }
+        return Ok(result.User);
     }
 }
