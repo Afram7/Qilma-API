@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using Qilma_API.Data;
 using Qilma_API.DTOs;
 using Qilma_API.Models;
 using Qilma_API.Validators;
@@ -7,26 +9,24 @@ namespace Qilma_API.Services;
 public class UserService : IUserService
 {
 
-    // Hardcoded data
-    static readonly List<UserModel> _users = new List<UserModel>()
-    {
-        new() { UserId = 1, Name = "John Doe", Age = 30, Email = "john.doe@example.com", Password = "password123" },
-        new() { UserId = 2, Name = "Jane Smith", Age = 25, Email = "jane.smith@example.com", Password = "password456" }
-    };
-
+    private const string INTERNAL_ERROR_MESSAGE = "Internal server error";
     private readonly UserValidator _userValidator;
+    private readonly AppDbContext _context;
 
-    public UserService(UserValidator userValidator){
+    public UserService(UserValidator userValidator, AppDbContext context){
         _userValidator = userValidator;
+        _context = context;
     }
 
-    // Should be async when using database
-    private bool IsEmailTaken(string email)
+    // Validates if the email already exists in the database
+    private async Task<(bool EmailExists, string? ErrorMessage)> ValidateEmailAsync(string email)
     {
-        return _users.Any(user => user.Email == email);
+        bool emailExists = await _context.Users.AnyAsync(u => u.Email == email);
+        return emailExists ? (true, "Email already exists") : (false, null);
     }
 
-    private async Task<string> hashPassword(string password)
+    // Hashes the password using BCrypt with a work factor of 13
+    private async Task<string> HashPassword(string password)
     {
         string hashedPassword = await Task.Run(() => BC.EnhancedHashPassword(password, 13));
         return hashedPassword;
@@ -34,38 +34,38 @@ public class UserService : IUserService
 
     public async Task<CreateUserResult> CreateUserAsync(CreateUserDTO newUser)
     {
-        
         var validation = _userValidator.ValidateNewUser(newUser);
-        if (!validation.isValid)
+        if (!validation.IsValid)
         {
             return new CreateUserResult
             {
                 IsValid = false,
-                ErrorMessage = validation.errorMessage
+                ErrorMessage = validation.ErrorMessage
             };
         }
 
-        if (IsEmailTaken(newUser.Email))
+        var emailResult = await ValidateEmailAsync(newUser.Email);
+        if (emailResult.EmailExists)
         {
             return new CreateUserResult
             {
                 Conflict = true,
-                ErrorMessage = "Email already exists"
+                ErrorMessage = emailResult.ErrorMessage
             };
         }
 
         try
         {
-            string hashedPassword = await hashPassword(newUser.Password);
+            string hashedPassword = await HashPassword(newUser.Password);
             var userModel = new UserModel
             {
-                UserId = _users.Count + 1,
                 Name = newUser.Name,
                 Age = newUser.Age,
                 Email = newUser.Email,
                 Password = hashedPassword
             };
-            _users.Add(userModel);
+            _context.Users.Add(userModel);
+            await _context.SaveChangesAsync();
             return new CreateUserResult
             {
                 IsValid = true,
@@ -78,12 +78,13 @@ public class UserService : IUserService
                 }
             };
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
             return new CreateUserResult
             {
                 Failed = true,
-                ErrorMessage = "Internal server error"
+                ErrorMessage = INTERNAL_ERROR_MESSAGE
             };
         }
     }

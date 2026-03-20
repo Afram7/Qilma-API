@@ -1,5 +1,6 @@
 namespace Qilma_API.DTOs;
 
+// DTO for returning user information without sensitive data like password
 public class UserDTO
 {
     required public int UserId { get; set; }
@@ -8,6 +9,7 @@ public class UserDTO
     required public string Email { get; set; }
 }
 
+// DTO for creating a new user, includes password fields for validation
 public class CreateUserDTO
 {
     required public string Name { get; set; }
@@ -17,6 +19,7 @@ public class CreateUserDTO
     required public string ConfirmPassword { get; set; }
 }
 
+// DTO for returning the result of a user creation attempt, including success status and any error messages
 public class CreateUserResult
 { 
     public bool IsValid { get; set; }

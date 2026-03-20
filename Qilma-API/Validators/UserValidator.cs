@@ -14,7 +14,7 @@ public class UserValidator
     private const int MAX_AGE_LENGTH = 120;
     private const int MIN_PASSWORD_LENGTH = 8;
 
-    private (bool isValid, string? errorMessage) validateName(string name)
+    private (bool IsValid, string? ErrorMessage) ValidateName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -43,7 +43,7 @@ public class UserValidator
         return (true, null);
     }
 
-    private (bool isValid, string? errorMessage) validateEmail(string email)
+    private (bool IsValid, string? ErrorMessage) ValidateEmail(string email)
     {
         var trimmedEmail = email.Trim();
 
@@ -69,13 +69,14 @@ public class UserValidator
             var mailAddress = new MailAddress(trimmedEmail);
             return (true, null);
         }
-        catch (FormatException)
+        catch (FormatException ex)
         {
+            Console.WriteLine(ex.Message);
             return (false, "Invalid email");
         }
     }
 
-    private (bool isValid, string? errorMessage) validateAge(int age)
+    private (bool IsValid, string? ErrorMessage) ValidateAge(int age)
     {
         if (age < 0){
             return (false, "Age cannot be negative");
@@ -94,7 +95,7 @@ public class UserValidator
         return (true, null);
     }
 
-    private (bool isValid, string? errorMessage) validatePassword(string password, string confirmPassword)
+    private (bool IsValid, string? ErrorMessage) ValidatePassword(string password, string confirmPassword)
     {
         if (string.IsNullOrWhiteSpace(password))
         {
@@ -126,29 +127,31 @@ public class UserValidator
         }
         return (true, null);
     }
-    public (bool isValid, string? errorMessage) ValidateNewUser(CreateUserDTO newUser)
+
+    // Validates the user input for creating a new user according to the specified rules
+    public (bool IsValid, string? ErrorMessage) ValidateNewUser(CreateUserDTO newUser)
     {
-        var nameResult = validateName(newUser.Name);
-        if (!nameResult.isValid)
+        var nameResult = ValidateName(newUser.Name);
+        if (!nameResult.IsValid)
         {
-            return (false, nameResult.errorMessage);
+            return (false, nameResult.ErrorMessage);
         }
 
-        var emailResult = validateEmail(newUser.Email);
-        if (!emailResult.isValid)
+        var emailResult = ValidateEmail(newUser.Email);
+        if (!emailResult.IsValid)
         {
-            return (false, emailResult.errorMessage);
+            return (false, emailResult.ErrorMessage);
         }
 
-        var ageResult = validateAge(newUser.Age);
-        if (!ageResult.isValid)
+        var ageResult = ValidateAge(newUser.Age);
+        if (!ageResult.IsValid)
         {
-            return (false, ageResult.errorMessage);         
+            return (false, ageResult.ErrorMessage);         
         }
 
-        var passwordResult = validatePassword(newUser.Password, newUser.ConfirmPassword);
-        if (!passwordResult.isValid){
-            return (false, passwordResult.errorMessage);
+        var passwordResult = ValidatePassword(newUser.Password, newUser.ConfirmPassword);
+        if (!passwordResult.IsValid){
+            return (false, passwordResult.ErrorMessage);
         }
         
         return (true, null);

@@ -7,7 +7,7 @@ public class UserModel
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    required public int UserId { get; set; }
+    public int UserId { get; set; }
     [Required]
     required public string Name { get; set; }
     [Required]
