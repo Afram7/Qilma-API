@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using Qilma_API.Data;
 using Qilma_API.Services;
 using Qilma_API.Validators;
 
@@ -11,6 +13,8 @@ builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
 
 // Dependency Injection
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddTransient<UserValidator>();
 
