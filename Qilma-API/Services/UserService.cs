@@ -11,17 +11,17 @@ public class UserService : IUserService
 
     private const string INTERNAL_ERROR_MESSAGE = "Internal server error";
     private readonly UserValidator _userValidator;
-    private readonly AppDbContext _context;
+    private readonly AppDbContext _db;
 
-    public UserService(UserValidator userValidator, AppDbContext context){
+    public UserService(UserValidator userValidator, AppDbContext db){
         _userValidator = userValidator;
-        _context = context;
+        _db = db;
     }
 
     // Validates if the email already exists in the database
-    private async Task<(bool EmailExists, string? ErrorMessage)> ValidateEmailAsync(string email)
+    private async Task<(bool EmailExists, string? ErrorMessage)> ValidateEmailExistsAsync(string email)
     {
-        bool emailExists = await _context.Users.AnyAsync(u => u.Email == email);
+        bool emailExists = await _db.Users.AnyAsync(user => user.Email == email);
         return emailExists ? (true, "Email already exists") : (false, null);
     }
 
@@ -32,6 +32,12 @@ public class UserService : IUserService
         return hashedPassword;
     }
 
+    // Validates if a user with the given ID exists in the database
+    private async Task<(UserModel? User, bool UserExists, string? ErrorMessage)> ValidateUserExistsAsync(int id)
+    {
+        var user = await _db.Users.FindAsync(id);
+        return user == null ? (null, false, "User not found") : (user, true, null);
+    }
     public async Task<CreateUserResult> CreateUserAsync(CreateUserDTO newUser)
     {
         var validation = _userValidator.ValidateNewUser(newUser);
@@ -44,7 +50,7 @@ public class UserService : IUserService
             };
         }
 
-        var emailResult = await ValidateEmailAsync(newUser.Email);
+        var emailResult = await ValidateEmailExistsAsync(newUser.Email);
         if (emailResult.EmailExists)
         {
             return new CreateUserResult
@@ -64,8 +70,8 @@ public class UserService : IUserService
                 Email = newUser.Email,
                 Password = hashedPassword
             };
-            _context.Users.Add(userModel);
-            await _context.SaveChangesAsync();
+            _db.Users.Add(userModel);
+            await _db.SaveChangesAsync();
             return new CreateUserResult
             {
                 IsValid = true,
@@ -82,6 +88,42 @@ public class UserService : IUserService
         {
             Console.WriteLine(ex.Message);
             return new CreateUserResult
+            {
+                Failed = true,
+                ErrorMessage = INTERNAL_ERROR_MESSAGE
+            };
+        }
+    }
+
+    public async Task<GetUserByIdResult> GetUserByIdAsync(int id)
+    {
+        try
+        {
+            var userResult = await ValidateUserExistsAsync(id);
+            if (!userResult.UserExists)
+            {
+                return new GetUserByIdResult
+                {
+                    NotFound = true,
+                    ErrorMessage = userResult.ErrorMessage
+                };
+            }
+
+            return new GetUserByIdResult
+            {
+                User = new UserDTO
+                {
+                    UserId = userResult.User!.UserId,
+                    Name = userResult.User.Name,
+                    Age = userResult.User.Age,
+                    Email = userResult.User.Email
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return new GetUserByIdResult
             {
                 Failed = true,
                 ErrorMessage = INTERNAL_ERROR_MESSAGE

@@ -28,3 +28,12 @@ public class CreateUserResult
     public string? ErrorMessage { get; set; }
     public UserDTO? User { get; set; }
 }
+
+// DTO for returning the result of a get user by ID attempt, including success status and any error messages
+public class GetUserByIdResult
+{
+    public bool NotFound { get; set; }
+    public bool Failed { get; set; }
+    public string? ErrorMessage { get; set; }
+    public UserDTO? User { get; set; }
+}
