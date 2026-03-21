@@ -43,6 +43,25 @@ public class UserValidator
         return (true, null);
     }
 
+    private (bool IsValid, string? ErrorMessage) ValidateAge(int age)
+    {
+        if (age < 0){
+            return (false, "Age cannot be negative");
+        }
+
+        if (age < MIN_AGE_LENGTH){
+            return (false, "Age must be 6+");
+        }
+
+        if (age > MAX_AGE_LENGTH){
+            return (false, "Age is too high");
+        }
+        if (!int.TryParse(age.ToString(), out _)){
+            return (false, "Age must be a number");
+        }
+        return (true, null);
+    }
+
     private (bool IsValid, string? ErrorMessage) ValidateEmail(string email)
     {
         var trimmedEmail = email.Trim();
@@ -74,25 +93,6 @@ public class UserValidator
             Console.WriteLine(ex.Message);
             return (false, "Invalid email");
         }
-    }
-
-    private (bool IsValid, string? ErrorMessage) ValidateAge(int age)
-    {
-        if (age < 0){
-            return (false, "Age cannot be negative");
-        }
-
-        if (age < MIN_AGE_LENGTH){
-            return (false, "Age must be 6+");
-        }
-
-        if (age > MAX_AGE_LENGTH){
-            return (false, "Age is too high");
-        }
-        if (!int.TryParse(age.ToString(), out _)){
-            return (false, "Age must be a number");
-        }
-        return (true, null);
     }
 
     private (bool IsValid, string? ErrorMessage) ValidatePassword(string password, string confirmPassword)
@@ -137,16 +137,16 @@ public class UserValidator
             return (false, nameResult.ErrorMessage);
         }
 
-        var emailResult = ValidateEmail(newUser.Email);
-        if (!emailResult.IsValid)
-        {
-            return (false, emailResult.ErrorMessage);
-        }
-
         var ageResult = ValidateAge(newUser.Age);
         if (!ageResult.IsValid)
         {
             return (false, ageResult.ErrorMessage);         
+        }
+
+        var emailResult = ValidateEmail(newUser.Email);
+        if (!emailResult.IsValid)
+        {
+            return (false, emailResult.ErrorMessage);
         }
 
         var passwordResult = ValidatePassword(newUser.Password, newUser.ConfirmPassword);
