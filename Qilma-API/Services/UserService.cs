@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Qilma_API.Constants;
 using Qilma_API.Data;
 using Qilma_API.DTOs;
 using Qilma_API.Models;
@@ -9,7 +10,6 @@ namespace Qilma_API.Services;
 public class UserService : IUserService
 {
 
-    private const string INTERNAL_ERROR_MESSAGE = "Internal server error";
     private readonly UserValidator _userValidator;
     private readonly AppDbContext _db;
 
@@ -18,26 +18,27 @@ public class UserService : IUserService
         _db = db;
     }
 
-    // Validates if the email already exists in the database
-    private async Task<(bool EmailExists, string? ErrorMessage)> ValidateEmailExistsAsync(string email)
+    // Checks if the email already exists in the database
+    private async Task<bool> CheckEmailExistsAsync(string email)
     {
         bool emailExists = await _db.Users.AnyAsync(user => user.Email == email);
-        return emailExists ? (true, "Email already exists") : (false, null);
+        return emailExists;
     }
 
     // Hashes the password using BCrypt with a work factor of 13
-    private async Task<string> HashPassword(string password)
+    private async Task<string> HashPasswordAsync(string password)
     {
         string hashedPassword = await Task.Run(() => BC.EnhancedHashPassword(password, 13));
         return hashedPassword;
     }
 
-    // Validates if a user with the given ID exists in the database
-    private async Task<(UserModel? User, bool UserExists, string? ErrorMessage)> ValidateUserExistsAsync(int id)
+    // Returns the user with the specified ID, or null if not found
+    private async Task<UserModel?> FetchUserByIdAsync(int id)
     {
         var user = await _db.Users.FindAsync(id);
-        return user == null ? (null, false, "User not found") : (user, true, null);
+        return user;
     }
+    
     public async Task<CreateUserResult> CreateUserAsync(CreateUserDTO newUser)
     {
         var validation = _userValidator.ValidateNewUser(newUser);
@@ -50,19 +51,18 @@ public class UserService : IUserService
             };
         }
 
-        var emailResult = await ValidateEmailExistsAsync(newUser.Email);
-        if (emailResult.EmailExists)
-        {
-            return new CreateUserResult
-            {
-                Conflict = true,
-                ErrorMessage = emailResult.ErrorMessage
-            };
-        }
-
         try
         {
-            string hashedPassword = await HashPassword(newUser.Password);
+            var emailExists = await CheckEmailExistsAsync(newUser.Email);
+            if (emailExists)
+            {
+                return new CreateUserResult
+                {
+                    Conflict = true,
+                    ErrorMessage = HttpErrorMessages.EMAIL_ALREADY_EXISTS
+                };
+            }
+            string hashedPassword = await HashPasswordAsync(newUser.Password);
             var userModel = new UserModel
             {
                 Name = newUser.Name,
@@ -90,7 +90,7 @@ public class UserService : IUserService
             return new CreateUserResult
             {
                 Failed = true,
-                ErrorMessage = INTERNAL_ERROR_MESSAGE
+                ErrorMessage = HttpErrorMessages.INTERNAL_ERROR_MESSAGE
             };
         }
     }
@@ -99,13 +99,13 @@ public class UserService : IUserService
     {
         try
         {
-            var userResult = await ValidateUserExistsAsync(id);
-            if (!userResult.UserExists)
+            var user = await FetchUserByIdAsync(id);
+            if (user == null)
             {
                 return new GetUserByIdResult
                 {
                     NotFound = true,
-                    ErrorMessage = userResult.ErrorMessage
+                    ErrorMessage = HttpErrorMessages.USER_NOT_FOUND
                 };
             }
 
@@ -113,10 +113,10 @@ public class UserService : IUserService
             {
                 User = new UserDTO
                 {
-                    UserId = userResult.User!.UserId,
-                    Name = userResult.User.Name,
-                    Age = userResult.User.Age,
-                    Email = userResult.User.Email
+                    UserId = user.UserId,
+                    Name = user.Name,
+                    Age = user.Age,
+                    Email = user.Email
                 }
             };
         }
@@ -126,7 +126,7 @@ public class UserService : IUserService
             return new GetUserByIdResult
             {
                 Failed = true,
-                ErrorMessage = INTERNAL_ERROR_MESSAGE
+                ErrorMessage = HttpErrorMessages.INTERNAL_ERROR_MESSAGE
             };
         }
     }
