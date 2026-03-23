@@ -130,4 +130,33 @@ public class UserService : IUserService
             };
         }
     }
+
+    public async Task<DeleteUserByIdResult> DeleteUserByIdAsync(int id)
+    {
+        try
+        {
+            var user = await FetchUserByIdAsync(id);
+            if (user == null)
+            {
+                return new DeleteUserByIdResult
+                {
+                    NotFound = true,
+                    ErrorMessage = HttpErrorMessages.USER_NOT_FOUND
+                };
+            }
+
+            _db.Users.Remove(user);
+            await _db.SaveChangesAsync();
+            return new DeleteUserByIdResult();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return new DeleteUserByIdResult
+            {
+                Failed = true,
+                ErrorMessage = HttpErrorMessages.INTERNAL_ERROR_MESSAGE
+            };
+        }
+    }
 }

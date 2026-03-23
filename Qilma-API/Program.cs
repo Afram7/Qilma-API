@@ -1,4 +1,8 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Qilma_API.Constants;
 using Qilma_API.Data;
 using Qilma_API.Services;
 using Qilma_API.Validators;
@@ -18,6 +22,29 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddTransient<UserValidator>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(jwtOptions =>
+{
+    jwtOptions.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateLifetime = false,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(builder.Configuration["Jwt:Key"]!)),
+        ValidateIssuer = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidateAudience = true,
+        ValidAudience = builder.Configuration["Jwt:Audience"]
+    };
+    jwtOptions.Events = new JwtBearerEvents
+    {
+        OnChallenge = async context =>
+        {
+            context.Response.StatusCode = 401;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsJsonAsync(HttpErrorMessages.UNAUTHORIZED_MESSAGE);
+            context.HandleResponse();
+        }
+    };
+});
 
 var app = builder.Build();
 
@@ -30,6 +57,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 

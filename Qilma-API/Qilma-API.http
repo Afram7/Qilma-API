@@ -1,1 +1,13 @@
 @Qilma_API_HostAddress = http://localhost:5164
+
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIzIiwiTmFtZSI6IkFmcmFtIEhhcm91biIsIkVtYWlsIjoiYWZyYW1oYXJvbkBob3RtYWlsLmNvbSIsIkFnZSI6IjI2IiwiaXNzIjoiUWlsbWFBUEkiLCJhdWQiOiJRaWxtYUFQSVVzZXJzIn0.S1tZ4EceX2o5fksXlsVgHeSSl_HwKMPh4FY73J4hiXg
+
+@invalidToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiI0IiwiTmFtZSI6IkFmcmFtIEhhcm91biIsIkVtYWlsIjoiYWZyYW1oYXJvbkBob3RtYWlsLmNvbSIsIkFnZSI6IjI2IiwiaXNzIjoiUWlsbWFBUEkiLCJhdWQiOiJRaWxtYUFQSVVzZXJzIn0.zn0oT7tEQjTd6hroFYV2geG4-3Qakme-Jbrnu0v8ZvQ
+
+GET {{Qilma_API_HostAddress}}/users/me
+Authorization: Bearer {{invalidToken}}
+
+###
+
+DELETE {{Qilma_API_HostAddress}}/users/me
+Authorization: Bearer {{invalidToken}}

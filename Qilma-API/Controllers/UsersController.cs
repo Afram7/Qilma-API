@@ -36,13 +36,12 @@ public class UsersController : ControllerBase
         return CreatedAtAction(nameof(GetUserById), new { id = result.User!.UserId }, result.User);
     }
 
-
-    // [Authorize] attribute is commented out for testing purposes, should be re-enabled when authentication is implemented
-    // [Authorize]
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetUserById(int id)
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<IActionResult> GetUserById()
     {
-        var result = await _userService.GetUserByIdAsync(id);
+        var userId = int.Parse(User.FindFirst("UserId")!.Value);
+        var result = await _userService.GetUserByIdAsync(userId);
         if (result.Failed)
         {
             return StatusCode(500, result.ErrorMessage);
@@ -52,5 +51,22 @@ public class UsersController : ControllerBase
             return NotFound(result.ErrorMessage);
         }
         return Ok(result.User);
+    }
+
+    [Authorize]
+    [HttpDelete("me")]
+    public async Task<IActionResult> DeleteUserById()
+    {
+        var userId = int.Parse(User.FindFirst("UserId")!.Value);
+        var result = await _userService.DeleteUserByIdAsync(userId);
+        if (result.Failed)
+        {
+            return StatusCode(500, result.ErrorMessage);
+        }
+        if (result.NotFound)
+        {
+            return NotFound(result.ErrorMessage);
+        }
+        return NoContent();
     }
 }
