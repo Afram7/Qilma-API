@@ -9,4 +9,7 @@ public interface IUserService
 
     // Get user's information
     Task<GetUserByIdResult> GetUserByIdAsync(int id);
+
+    // Delete user's information
+    public Task<DeleteUserByIdResult> DeleteUserByIdAsync(int id);
 }

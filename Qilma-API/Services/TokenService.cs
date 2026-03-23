@@ -33,8 +33,8 @@ public class TokenService : ITokenService
     // Checks if the provided password matches the hashed password stored in the database
     private async Task<bool> ValidatePasswordAsync(string password, string hashedPassword)
     {
-        bool isCorrectPassword = await Task.Run(() => BC.EnhancedVerify(password, hashedPassword));
-        return isCorrectPassword;
+        bool isValidPassword = await Task.Run(() => BC.EnhancedVerify(password, hashedPassword));
+        return isValidPassword;
     }
 
     public async Task<TokenResponseResult> GenerateTokenAsync(string email, string password)
@@ -51,8 +51,8 @@ public class TokenService : ITokenService
                 };
             }
 
-            var isPasswordValid = await ValidatePasswordAsync(password, user.Password);
-            if (!isPasswordValid)
+            var isValidPassword = await ValidatePasswordAsync(password, user.Password);
+            if (!isValidPassword)
             {
                 return new TokenResponseResult
                 {

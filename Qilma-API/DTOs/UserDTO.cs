@@ -37,3 +37,11 @@ public class GetUserByIdResult
     public string? ErrorMessage { get; set; }
     public UserDTO? User { get; set; }
 }
+
+// DTO for returning the result of a delete user by ID attempt, including success status and any error messages
+public class DeleteUserByIdResult
+{
+    public bool NotFound { get; set; }
+    public bool Failed { get; set; }
+    public string? ErrorMessage { get; set; }
+}
