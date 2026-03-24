@@ -15,4 +15,7 @@ public interface IUserService
 
     // Delete user's information
     Task<DeleteUserByIdResult> DeleteUserByIdAsync(int id);
+
+    // Update user's password
+    Task<UpdateUserPasswordResult> UpdateUserPasswordAsync(int id, UpdateUserPasswordDTO updatedPassword);
 }

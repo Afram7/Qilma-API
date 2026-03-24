@@ -7,13 +7,13 @@ using Qilma_API.Constants;
 using Qilma_API.Data;
 using Qilma_API.DTOs;
 using Qilma_API.Models;
+using Qilma_API.Validators;
 
 namespace Qilma_API.Services;
 
 public class TokenService : ITokenService
 {
 
-    private const string INTERNAL_ERROR_MESSAGE = "Internal server error";
     private readonly AppDbContext _db;
     private readonly IConfiguration _config;
 
@@ -30,13 +30,6 @@ public class TokenService : ITokenService
         return user;
     }
 
-    // Checks if the provided password matches the hashed password stored in the database
-    private async Task<bool> ValidatePasswordAsync(string password, string hashedPassword)
-    {
-        bool isValidPassword = await Task.Run(() => BC.EnhancedVerify(password, hashedPassword));
-        return isValidPassword;
-    }
-
     public async Task<TokenResponseResult> GenerateTokenAsync(string email, string password)
     {
         try
@@ -51,7 +44,7 @@ public class TokenService : ITokenService
                 };
             }
 
-            var isValidPassword = await ValidatePasswordAsync(password, user.Password);
+            var isValidPassword = await PasswordValidator.ValidatePasswordAsync(password, user.Password);
             if (!isValidPassword)
             {
                 return new TokenResponseResult

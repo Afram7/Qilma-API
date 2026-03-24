@@ -63,3 +63,20 @@ public class DeleteUserByIdResult
     public bool Failed { get; set; }
     public string? ErrorMessage { get; set; }
 }
+
+// DTO for updating a user's password, includes current password for verification and new password fields for validation
+public class UpdateUserPasswordDTO
+{
+    required public string CurrentPassword { get; set; }
+    required public string NewPassword { get; set; }
+    required public string ConfirmPassword { get; set; }
+}
+
+// DTO for returning the result of an update user password attempt, including success status and any error messages
+public class UpdateUserPasswordResult
+{
+    public bool IsValid { get; set; }
+    public bool NotFound { get; set; }
+    public bool Failed { get; set; }
+    public string? ErrorMessage { get; set; }
+}

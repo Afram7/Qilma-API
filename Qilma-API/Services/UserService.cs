@@ -221,4 +221,58 @@ public class UserService : IUserService
             };
         }
     }
+
+    public async Task<UpdateUserPasswordResult> UpdateUserPasswordAsync(int id, UpdateUserPasswordDTO updatedPassword)
+    {
+        try
+        {
+            var user = await FetchUserByIdAsync(id);
+            if (user == null)
+            {
+                return new UpdateUserPasswordResult
+                {
+                    NotFound = true,
+                    ErrorMessage = HttpErrorMessages.USER_NOT_FOUND
+                };
+            }
+            
+            var isValidPassword = await PasswordValidator.ValidatePasswordAsync(updatedPassword.CurrentPassword, user.Password);
+            if (!isValidPassword)
+            {
+                return new UpdateUserPasswordResult
+                {
+                    IsValid = false,
+                    ErrorMessage = HttpErrorMessages.INVALID_CURRENT_PASSWORD
+                };
+            }
+
+            var validation = _userValidator.ValidateUpdatedPassword(updatedPassword.NewPassword, updatedPassword.ConfirmPassword);
+            if (!validation.IsValid)
+            {
+                return new UpdateUserPasswordResult
+                {
+                    IsValid = false,
+                    ErrorMessage = validation.ErrorMessage
+                };
+            }
+
+            string hashedPassword = await HashPasswordAsync(updatedPassword.NewPassword);
+            user.Password = hashedPassword;
+            await _db.SaveChangesAsync();
+            
+            return new UpdateUserPasswordResult
+            {
+                IsValid = true,
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return new UpdateUserPasswordResult
+            {
+                Failed = true,
+                ErrorMessage = HttpErrorMessages.INTERNAL_ERROR_MESSAGE
+            };
+        }
+    }
 }
