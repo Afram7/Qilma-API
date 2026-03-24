@@ -153,7 +153,6 @@ public class UserValidator
         if (!passwordResult.IsValid){
             return (false, passwordResult.ErrorMessage);
         }
-        
         return (true, null);
     }
 
@@ -186,7 +185,16 @@ public class UserValidator
                 return (false, emailResult.ErrorMessage);
             }
         }
+        return (true, null);
+    }
 
+    // Validates the user input for updating a user's password according to the specified rules
+    public (bool IsValid, string? ErrorMessage) ValidateUpdatedPassword(string password, string confirmPassword)
+    {
+        var passwordResult = ValidatePassword(password, confirmPassword);
+        if (!passwordResult.IsValid){
+            return (false, passwordResult.ErrorMessage);
+        }
         return (true, null);
     }
 }

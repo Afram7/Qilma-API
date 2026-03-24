@@ -89,4 +89,25 @@ public class UsersController : ControllerBase
         }
         return NoContent();
     }
+
+    [Authorize]
+    [HttpPut("me/password")]
+    public async Task<IActionResult> UpdateUserPassword(UpdateUserPasswordDTO updatedPassword)
+    {
+        var userId = int.Parse(User.FindFirst("UserId")!.Value);
+        var result = await _userService.UpdateUserPasswordAsync(userId, updatedPassword);
+        if (result.Failed)
+        {
+            return StatusCode(500, result.ErrorMessage);
+        }
+        if (result.NotFound)
+        {
+            return NotFound(result.ErrorMessage);
+        }
+        if (!result.IsValid)
+        {
+            return BadRequest(result.ErrorMessage);
+        }
+        return Ok();
+    }
 }
