@@ -54,6 +54,26 @@ public class UsersController : ControllerBase
     }
 
     [Authorize]
+    [HttpPut("me")]
+    public async Task<IActionResult> UpdateUserById([FromBody] UpdateUserDTO updatedUser)
+    {
+        var userId = int.Parse(User.FindFirst("UserId")!.Value);
+        var result = await _userService.UpdateUserByIdAsync(userId, updatedUser);
+        if (result.Failed)        {
+            return StatusCode(500, result.ErrorMessage);
+        }
+        if (!result.IsValid)
+        {
+            return BadRequest(result.ErrorMessage);
+        }
+        if (result.NotFound)
+        {
+            return NotFound(result.ErrorMessage);
+        }
+        return Ok(result.User);
+    }
+
+    [Authorize]
     [HttpDelete("me")]
     public async Task<IActionResult> DeleteUserById()
     {

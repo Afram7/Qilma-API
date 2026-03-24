@@ -156,4 +156,37 @@ public class UserValidator
         
         return (true, null);
     }
+
+    // Validates the user input for updating a user according to the specified rules
+    public (bool IsValid, string? ErrorMessage) ValidateUpdatedUser(UpdateUserDTO updatedUser)
+    {
+        if (updatedUser.Name != null)
+        {
+            var nameResult = ValidateName(updatedUser.Name);
+            if (!nameResult.IsValid)
+            {
+                return (false, nameResult.ErrorMessage);
+            }
+        }
+
+        if (updatedUser.Age.HasValue)
+        {
+            var ageResult = ValidateAge(updatedUser.Age.Value);
+            if (!ageResult.IsValid)
+            {
+                return (false, ageResult.ErrorMessage);
+            }
+        }
+
+        if (updatedUser.Email != null)
+        {
+            var emailResult = ValidateEmail(updatedUser.Email);
+            if (!emailResult.IsValid)
+            {
+                return (false, emailResult.ErrorMessage);
+            }
+        }
+
+        return (true, null);
+    }
 }

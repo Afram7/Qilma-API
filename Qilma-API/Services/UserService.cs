@@ -131,6 +131,68 @@ public class UserService : IUserService
         }
     }
 
+    public async Task<UpdateUserByIdResult> UpdateUserByIdAsync(int id, UpdateUserDTO updatedUser)
+    {
+        try
+        {
+            var user = await FetchUserByIdAsync(id);
+            if (user == null)
+            {
+                return new UpdateUserByIdResult
+                {
+                    NotFound = true,
+                    ErrorMessage = HttpErrorMessages.USER_NOT_FOUND
+                };
+            }
+
+            var validation = _userValidator.ValidateUpdatedUser(updatedUser);
+            if (!validation.IsValid)
+            {
+                return new UpdateUserByIdResult
+                {
+                    IsValid = false,
+                    ErrorMessage = validation.ErrorMessage
+                };
+            }
+
+            if (updatedUser.Name != null)
+            {
+                user.Name = updatedUser.Name;
+            }
+            if (updatedUser.Age.HasValue)
+            {
+                user.Age = updatedUser.Age.Value;
+            }
+            if (updatedUser.Email != null)
+            {
+                user.Email = updatedUser.Email;
+            }
+
+            await _db.SaveChangesAsync();
+            
+            return new UpdateUserByIdResult
+            {
+                IsValid = true,
+                User = new UserDTO
+                {
+                    UserId = user.UserId,
+                    Name = user.Name,
+                    Age = user.Age,
+                    Email = user.Email
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return new UpdateUserByIdResult
+            {
+                Failed = true,
+                ErrorMessage = HttpErrorMessages.INTERNAL_ERROR_MESSAGE
+            };
+        }
+    }
+
     public async Task<DeleteUserByIdResult> DeleteUserByIdAsync(int id)
     {
         try
