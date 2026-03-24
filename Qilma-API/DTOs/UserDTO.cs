@@ -19,6 +19,14 @@ public class CreateUserDTO
     required public string ConfirmPassword { get; set; }
 }
 
+// DTO for updating user information, includes name, age, and email fields
+public class UpdateUserDTO
+{
+    public string? Name { get; set; }
+    public int? Age { get; set; }
+    public string? Email { get; set; }
+}
+
 // DTO for returning the result of a user creation attempt, including success status and any error messages
 public class CreateUserResult
 { 
@@ -32,6 +40,16 @@ public class CreateUserResult
 // DTO for returning the result of a get user by ID attempt, including success status and any error messages
 public class GetUserByIdResult
 {
+    public bool NotFound { get; set; }
+    public bool Failed { get; set; }
+    public string? ErrorMessage { get; set; }
+    public UserDTO? User { get; set; }
+}
+
+// DTO for returning the result of an update user by ID attempt, including success status and any error messages
+public class UpdateUserByIdResult
+{
+    public bool IsValid { get; set; }
     public bool NotFound { get; set; }
     public bool Failed { get; set; }
     public string? ErrorMessage { get; set; }

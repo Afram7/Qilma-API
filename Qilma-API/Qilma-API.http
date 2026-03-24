@@ -9,5 +9,17 @@ Authorization: Bearer {{invalidToken}}
 
 ###
 
+PUT  {{Qilma_API_HostAddress}}/users/me
+Authorization: Bearer {{invalidToken}}
+Content-Type: application/json
+
+{
+    "name": "",
+    "age": 2,
+    "email": ""
+}
+
+###
+
 DELETE {{Qilma_API_HostAddress}}/users/me
 Authorization: Bearer {{invalidToken}}
