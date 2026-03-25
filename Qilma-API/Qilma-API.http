@@ -35,3 +35,9 @@ Content-Type: application/json
     "newPassword": "@Fram12345",
     "confirmPassword": "@Fram12345"
 }
+
+###
+
+POST {{Qilma_API_HostAddress}}/games
+# Authorization: Bearer {{token}}
+# X-Guest-Id: 1

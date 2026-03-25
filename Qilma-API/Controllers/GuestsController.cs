@@ -1,29 +1,28 @@
 using Microsoft.AspNetCore.Mvc;
 using Qilma_API.Services;
 
-namespace Qilma_API.Controllers
+namespace Qilma_API.Controllers;
+
+[Route("[controller]")]
+[ApiController]
+public class GuestsController : ControllerBase
 {
-    [Route("[controller]")]
-    [ApiController]
-    public class GuestsController : ControllerBase
+    
+    private readonly IGuestService _guestService;
+
+    public GuestsController(IGuestService guestService)
     {
-        
-        private readonly IGuestService _guestService;
+        _guestService = guestService;
+    }
 
-        public GuestsController(IGuestService guestService)
+    [HttpPost]
+    public async Task<IActionResult> CreateGuest()
+    {
+        var result = await _guestService.CreateGuestAsync();
+        if (result.Failed)
         {
-            _guestService = guestService;
+            return StatusCode(500, result.ErrorMessage);
         }
-
-        [HttpPost]
-        public async Task<IActionResult> CreateGuest()
-        {
-            var result = await _guestService.CreateGuestAsync();
-            if (result.Failed)
-            {
-                return StatusCode(500, result.ErrorMessage);
-            }
-            return Created("", result.Guest);
-        }
+        return Created("", result.Guest);
     }
 }

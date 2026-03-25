@@ -9,4 +9,5 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     // Define DbSet properties for each model
     public DbSet<UserModel> Users => Set<UserModel>();
     public DbSet<GuestModel> Guests => Set<GuestModel>();
+    public DbSet<GameModel> Games => Set<GameModel>();
 }
