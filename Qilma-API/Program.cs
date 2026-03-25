@@ -22,6 +22,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddTransient<UserValidator>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IGuestService, GuestService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(jwtOptions =>
 {
     jwtOptions.TokenValidationParameters = new TokenValidationParameters
