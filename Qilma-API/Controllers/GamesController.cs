@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Qilma_API.DTOs;
 using Qilma_API.Services;
 
 namespace Qilma_API.Controllers;
@@ -41,5 +42,48 @@ public class GamesController : ControllerBase
             return StatusCode(500, result.ErrorMessage);
         }
         return Created("", result.Game);
+    }
+
+
+    [HttpPost("{gameId}/guess")]
+    public async Task<IActionResult> SubmitGuess(int gameId, [FromBody] GuessWordDTO guessWord)
+    {
+        int guestId = 0;
+        if (User.Identity?.IsAuthenticated != true)
+        {
+            if (!Request.Headers.TryGetValue("X-Guest-Id", out var guestIdValue) ||
+                string.IsNullOrWhiteSpace(guestIdValue) ||
+                !int.TryParse(guestIdValue, out guestId))
+            {
+                return Unauthorized();
+            }
+        }
+
+        var result = await _gameService.SubmitGuessAsync(guestId, gameId, guessWord.Word);
+        if (result.Failed)
+        {
+            return StatusCode(500, result.ErrorMessage);
+        }
+        if (!result.IsValid)
+        {
+            return BadRequest(result.ErrorMessage);
+        }
+        if (result.NotFound)
+        {
+            return NotFound(result.ErrorMessage);
+        }
+        if (result.Forbidden)
+        {
+            return Forbid(result.ErrorMessage!);
+        }
+        if (result.Conflict)
+        {
+            return Conflict(result.ErrorMessage);
+        }
+        if (result.WordNotRecognized)
+        {
+            return UnprocessableEntity(result.ErrorMessage);
+        }
+        return Ok(result.GuessResult);
     }
 }
