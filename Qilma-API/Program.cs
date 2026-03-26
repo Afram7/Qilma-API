@@ -1,4 +1,5 @@
 using System.Text;
+using CrypticWizard.RandomWordGenerator;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -24,6 +25,8 @@ builder.Services.AddTransient<UserValidator>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IGuestService, GuestService>();
 builder.Services.AddScoped<IGameService, GameService>();
+builder.Services.AddTransient<GameValidator>();
+builder.Services.AddSingleton<WordGenerator>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(jwtOptions =>
 {
     jwtOptions.TokenValidationParameters = new TokenValidationParameters

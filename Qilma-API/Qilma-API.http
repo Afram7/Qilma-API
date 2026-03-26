@@ -41,3 +41,13 @@ Content-Type: application/json
 POST {{Qilma_API_HostAddress}}/games
 # Authorization: Bearer {{token}}
 # X-Guest-Id: 1
+
+###
+
+POST  {{Qilma_API_HostAddress}}/games/9/guess
+X-Guest-Id: 1
+Content-Type: application/json
+
+{
+    "word": ""
+}
