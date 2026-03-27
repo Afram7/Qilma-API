@@ -6,4 +6,7 @@ public interface IGuestService
 {
     // Create a new guest
     Task<CreateGuestResult> CreateGuestAsync();
+
+    // Get guest's statistics
+    Task<GetStatistcsResult> GetGuestStatistcsAsync(int id);
 }

@@ -57,3 +57,8 @@ Content-Type: application/json
 
 GET {{Qilma_API_HostAddress}}/users/me/statistics
 Authorization: Bearer {{token}}
+
+###
+
+GET {{Qilma_API_HostAddress}}/guests/me/statistics
+X-Guest-Id: 4
