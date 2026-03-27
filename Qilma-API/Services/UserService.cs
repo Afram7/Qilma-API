@@ -315,7 +315,6 @@ public class UserService : IUserService
         try
         {
             var statistic = await FetchUserStatisticsByIdAsync(id);
-            Console.WriteLine(statistic);
             if (statistic == null)
             {
                 return new GetStatistcsResult
@@ -324,6 +323,7 @@ public class UserService : IUserService
                     ErrorMessage = HttpErrorMessages.STATISTIC_NOT_FOUND
                 };
             }
+            
             return new GetStatistcsResult
             {
                 Statistic = new StatisticDTO

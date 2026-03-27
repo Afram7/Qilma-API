@@ -25,4 +25,25 @@ public class GuestsController : ControllerBase
         }
         return Created("", result.Guest);
     }
+
+    [HttpGet("me/statistics")]
+    public async Task<IActionResult> GetGuestStatistcs()
+    {
+        if (!int.TryParse(Request.Headers["X-Guest-Id"], out int guestId))
+        {
+            return Unauthorized();
+        }
+
+        var result = await _guestService.GetGuestStatistcsAsync(guestId);
+        if (result.Failed)
+        {
+            return StatusCode(500, result.ErrorMessage);
+        }
+
+        if (result.NotFound)
+        {
+            return NotFound();
+        }
+        return Ok(result.Statistic);
+    }
 }
