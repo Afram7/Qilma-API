@@ -1,6 +1,6 @@
 @Qilma_API_HostAddress = http://localhost:5164
 
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIzIiwiTmFtZSI6IkFmcmFtIEhhcm91biIsIkVtYWlsIjoiYWZyYW1oYXJvbkBob3RtYWlsLmNvbSIsIkFnZSI6IjI2IiwiaXNzIjoiUWlsbWFBUEkiLCJhdWQiOiJRaWxtYUFQSVVzZXJzIn0.S1tZ4EceX2o5fksXlsVgHeSSl_HwKMPh4FY73J4hiXg
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIxMyIsIk5hbWUiOiJBZnJhbSBIYXJvdW4iLCJFbWFpbCI6ImFmcmFtaGFyb25AaG90bWFpbC5jb20iLCJBZ2UiOiIyNiIsImlzcyI6IlFpbG1hQVBJIiwiYXVkIjoiUWlsbWFBUElVc2VycyJ9.OkGoUj7LLD2IJR5cLV_rZ6VzHLpKq39eI4Xx7Xo_rjo
 
 @invalidToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiI0IiwiTmFtZSI6IkFmcmFtIEhhcm91biIsIkVtYWlsIjoiYWZyYW1oYXJvbkBob3RtYWlsLmNvbSIsIkFnZSI6IjI2IiwiaXNzIjoiUWlsbWFBUEkiLCJhdWQiOiJRaWxtYUFQSVVzZXJzIn0.zn0oT7tEQjTd6hroFYV2geG4-3Qakme-Jbrnu0v8ZvQ
 
@@ -40,14 +40,20 @@ Content-Type: application/json
 
 POST {{Qilma_API_HostAddress}}/games
 # Authorization: Bearer {{token}}
-# X-Guest-Id: 1
+# X-Guest-Id: 4
 
 ###
 
-POST  {{Qilma_API_HostAddress}}/games/9/guess
-X-Guest-Id: 1
+POST  {{Qilma_API_HostAddress}}/games/16/guess
+# Authorization: Bearer {{token}}
+# X-Guest-Id: 4
 Content-Type: application/json
 
 {
     "word": ""
 }
+
+###
+
+GET {{Qilma_API_HostAddress}}/users/me/statistics
+Authorization: Bearer {{token}}

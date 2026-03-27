@@ -1,4 +1,5 @@
 using CrypticWizard.RandomWordGenerator;
+using Microsoft.EntityFrameworkCore;
 using Qilma_API.Constants;
 using Qilma_API.Data;
 using Qilma_API.DTOs;
@@ -105,7 +106,7 @@ public class GameService : IGameService
         try
         {
             var word = GenerateRandomWord();
-            var game = new GameModel
+            var gameModel = new GameModel
             {
                 OwnerId = ownerId,
                 OwnerType = ownerType,
@@ -115,19 +116,28 @@ public class GameService : IGameService
                 Result = "pending"
             };
 
-            _db.Games.Add(game);
+            using var transaction = await _db.Database.BeginTransactionAsync();
+            var statistic = await _db.Statistics.FirstOrDefaultAsync(statistics => statistics.OwnerId == ownerId && statistics.OwnerType == ownerType);
+            if (statistic != null)
+            {
+                statistic.GamesPlayed++;
+            }
+
+            _db.Games.Add(gameModel);
             await _db.SaveChangesAsync();
+
+            await transaction.CommitAsync();
 
             return new CreateGameResult
             {
                 Game = new GameDTO
                 {
-                    GameId = game.GameId,
-                    OwnerId = game.OwnerId,
-                    OwnerType = game.OwnerType,
-                    Attempts = game.Attempts,
-                    Date = game.Date,
-                    Result = game.Result
+                    GameId = gameModel.GameId,
+                    OwnerId = gameModel.OwnerId,
+                    OwnerType = gameModel.OwnerType,
+                    Attempts = gameModel.Attempts,
+                    Date = gameModel.Date,
+                    Result = gameModel.Result
                 }
             };
         }
@@ -191,6 +201,7 @@ public class GameService : IGameService
                 };
             }
 
+            using var transaction = await _db.Database.BeginTransactionAsync();
             game.Attempts++;
 
             var resultArray = CalculateGuessResult(guessWord, game.Word);
@@ -198,6 +209,11 @@ public class GameService : IGameService
             if (guessWord.Equals(game.Word, StringComparison.OrdinalIgnoreCase))
             {
                 game.Result = "win";
+                var statistic = await _db.Statistics.FirstOrDefaultAsync(statistics => statistics.OwnerId == game.OwnerId && statistics.OwnerType == game.OwnerType);
+                if (statistic != null)
+                {
+                    statistic.GamesWon++;
+                }
             }
             else if (game.Attempts >= MAX_ATTEMPTS)
             {
@@ -205,6 +221,7 @@ public class GameService : IGameService
             }
 
             await _db.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             var guessResult = new GuessResultDTO
             {
