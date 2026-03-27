@@ -18,4 +18,7 @@ public interface IUserService
 
     // Update user's password
     Task<UpdateUserPasswordResult> UpdateUserPasswordAsync(int id, UpdateUserPasswordDTO updatedPassword);
+
+    // Get user's statistics
+    Task<GetStatistcsResult> GetUserStatistcsAsync(int id);
 }

@@ -110,4 +110,21 @@ public class UsersController : ControllerBase
         }
         return Ok();
     }
+
+    [Authorize]
+    [HttpGet("me/statistics")]
+    public async Task<IActionResult> GetUserStatistcs()
+    {
+        var userId = int.Parse(User.FindFirst("UserId")!.Value);
+        var result = await _userService.GetUserStatistcsAsync(userId);
+        if (result.Failed)
+        {
+            return StatusCode(500, result.ErrorMessage);
+        }
+        if (result.NotFound)
+        {
+            return NotFound(result.ErrorMessage);
+        }
+        return Ok(result.Statistic);
+    }
 }

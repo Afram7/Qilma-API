@@ -38,6 +38,13 @@ public class UserService : IUserService
         var user = await _db.Users.FindAsync(id);
         return user;
     }
+
+    // Returns the user's statistics with the specified ID, or null if not found
+    private async Task<StatisticModel?> FetchUserStatisticsByIdAsync(int id)
+    {
+        var statistic = await _db.Statistics.FirstOrDefaultAsync(statistics => statistics.OwnerId == id && statistics.OwnerType == "user");
+        return statistic;
+    }
     
     public async Task<CreateUserResult> CreateUserAsync(CreateUserDTO newUser)
     {
@@ -62,6 +69,7 @@ public class UserService : IUserService
                     ErrorMessage = HttpErrorMessages.EMAIL_ALREADY_EXISTS
                 };
             }
+
             string hashedPassword = await HashPasswordAsync(newUser.Password);
             var userModel = new UserModel
             {
@@ -70,8 +78,23 @@ public class UserService : IUserService
                 Email = newUser.Email,
                 Password = hashedPassword
             };
+
+            using var transaction = await _db.Database.BeginTransactionAsync();
             _db.Users.Add(userModel);
             await _db.SaveChangesAsync();
+
+            var statisticModel = new StatisticModel
+            {
+                OwnerId = userModel.UserId,
+                OwnerType = "user",
+                GamesPlayed = 0,
+                GamesWon = 0
+            };
+
+            _db.Statistics.Add(statisticModel);
+            await _db.SaveChangesAsync();
+            await transaction.CommitAsync();
+
             return new CreateUserResult
             {
                 IsValid = true,
@@ -207,8 +230,19 @@ public class UserService : IUserService
                 };
             }
 
+            using var transaction = await _db.Database.BeginTransactionAsync();
+            var statistic = await _db.Statistics.FirstOrDefaultAsync(statistics => statistics.OwnerId == user.UserId && statistics.OwnerType == "user");
+            if (statistic != null)
+            {
+                _db.Statistics.Remove(statistic);
+            }
+
+            var games = await _db.Games.Where(game => game.OwnerId == user.UserId && game.OwnerType == "user").ToListAsync();
+            _db.Games.RemoveRange(games);
+
             _db.Users.Remove(user);
             await _db.SaveChangesAsync();
+            await transaction.CommitAsync();
             return new DeleteUserByIdResult();
         }
         catch (Exception ex)
@@ -269,6 +303,43 @@ public class UserService : IUserService
         {
             Console.WriteLine(ex.Message);
             return new UpdateUserPasswordResult
+            {
+                Failed = true,
+                ErrorMessage = HttpErrorMessages.INTERNAL_ERROR_MESSAGE
+            };
+        }
+    }
+
+    public async Task<GetStatistcsResult> GetUserStatistcsAsync(int id)
+    {
+        try
+        {
+            var statistic = await FetchUserStatisticsByIdAsync(id);
+            Console.WriteLine(statistic);
+            if (statistic == null)
+            {
+                return new GetStatistcsResult
+                {
+                    NotFound = true,
+                    ErrorMessage = HttpErrorMessages.STATISTIC_NOT_FOUND
+                };
+            }
+            return new GetStatistcsResult
+            {
+                Statistic = new StatisticDTO
+                {
+                    StatisticId = statistic.StatisticId,
+                    OwnerId = statistic.OwnerId,
+                    OwnerType = statistic.OwnerType,
+                    GamesPlayed = statistic.GamesPlayed,
+                    GamesWon = statistic.GamesWon
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return new GetStatistcsResult
             {
                 Failed = true,
                 ErrorMessage = HttpErrorMessages.INTERNAL_ERROR_MESSAGE

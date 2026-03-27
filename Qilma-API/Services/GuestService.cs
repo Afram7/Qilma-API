@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Qilma_API.Constants;
 using Qilma_API.Data;
 using Qilma_API.DTOs;
@@ -18,15 +19,29 @@ public class GuestService : IGuestService
     {
         try
         {
-            var guest = new GuestModel();
-            _db.Guests.Add(guest);
+            var guestModel = new GuestModel();
+
+            using var transaction = await _db.Database.BeginTransactionAsync();
+            _db.Guests.Add(guestModel);
             await _db.SaveChangesAsync();
+
+            var statisticModel = new StatisticModel
+            {
+                OwnerId = guestModel.GuestId,
+                OwnerType = "guest",
+                GamesPlayed = 0,
+                GamesWon = 0
+            };
+
+            _db.Statistics.Add(statisticModel);
+            await _db.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             return new CreateGuestResult
             {
                 Guest = new GuestDTO
                 {
-                    GuestId = guest.GuestId
+                    GuestId = guestModel.GuestId
                 }
             };
         }
