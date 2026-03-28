@@ -44,7 +44,7 @@ public class TokenService : ITokenService
                 };
             }
 
-            var isValidPassword = await PasswordValidator.ValidatePasswordAsync(password, user.Password);
+            var isValidPassword = await PasswordValidator.VerifyPasswordAsync(password, user.Password);
             if (!isValidPassword)
             {
                 return new TokenResponseResult

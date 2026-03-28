@@ -8,11 +8,8 @@ public class UserValidator
 {
     private const int MIN_NAME_LENGTH = 2;
     private const int MAX_NAME_LENGTH = 30;
-    private const int MIN_EMAIL_LENGTH = 5;
-    private const int MAX_EMAIL_LENGTH = 254;
     private const int MIN_AGE_LENGTH = 6;
     private const int MAX_AGE_LENGTH = 120;
-    private const int MIN_PASSWORD_LENGTH = 8;
 
     private (bool IsValid, string? ErrorMessage) ValidateName(string name)
     {
@@ -62,72 +59,6 @@ public class UserValidator
         return (true, null);
     }
 
-    private (bool IsValid, string? ErrorMessage) ValidateEmail(string email)
-    {
-        var trimmedEmail = email.Trim();
-
-        if (string.IsNullOrWhiteSpace(trimmedEmail))
-        {
-            return (false, "Email is required");
-        }
-        if (trimmedEmail.EndsWith("."))
-        {
-            return (false, "No trailing dot");
-        }
-        if (trimmedEmail.Length > MAX_EMAIL_LENGTH)
-        {
-            return (false, "Email is too long");
-        }
-        if (trimmedEmail.Length < MIN_EMAIL_LENGTH)
-        {
-            return (false, "Email is too short");
-        }
-
-        try
-        {
-            var mailAddress = new MailAddress(trimmedEmail);
-            return (true, null);
-        }
-        catch (FormatException ex)
-        {
-            Console.WriteLine(ex.Message);
-            return (false, "Invalid email");
-        }
-    }
-
-    private (bool IsValid, string? ErrorMessage) ValidatePassword(string password, string confirmPassword)
-    {
-        if (string.IsNullOrWhiteSpace(password))
-        {
-            return (false, "Password is required");
-        }
-        if (password.Length < MIN_PASSWORD_LENGTH)
-        {
-            return (false, "Password too short");
-        }
-        if (password != confirmPassword)
-        {
-            return (false, "Passwords do not match");
-        }
-        if (!Regex.IsMatch(password, @"[A-Z]"))
-        {
-            return (false, "Need uppercase");
-        }
-        if (!Regex.IsMatch(password, @"[a-z]"))
-        {
-            return (false, "Need lowercase");
-        }
-        if (!Regex.IsMatch(password, @"[0-9]"))
-        {
-            return (false, "Need digit");
-        }
-        if (!Regex.IsMatch(password, @"[\W_]"))
-        {
-            return (false, "Need special character");
-        }
-        return (true, null);
-    }
-
     // Validates the user input for creating a new user according to the specified rules
     public (bool IsValid, string? ErrorMessage) ValidateNewUser(CreateUserDTO newUser)
     {
@@ -143,13 +74,13 @@ public class UserValidator
             return (false, ageResult.ErrorMessage);         
         }
 
-        var emailResult = ValidateEmail(newUser.Email);
+        var emailResult = EmailValidator.ValidateEmail(newUser.Email);
         if (!emailResult.IsValid)
         {
             return (false, emailResult.ErrorMessage);
         }
 
-        var passwordResult = ValidatePassword(newUser.Password, newUser.ConfirmPassword);
+        var passwordResult = PasswordValidator.ValidatePassword(newUser.Password, newUser.ConfirmPassword);
         if (!passwordResult.IsValid){
             return (false, passwordResult.ErrorMessage);
         }
@@ -179,7 +110,7 @@ public class UserValidator
 
         if (updatedUser.Email != null)
         {
-            var emailResult = ValidateEmail(updatedUser.Email);
+            var emailResult = EmailValidator.ValidateEmail(updatedUser.Email);
             if (!emailResult.IsValid)
             {
                 return (false, emailResult.ErrorMessage);
@@ -191,7 +122,7 @@ public class UserValidator
     // Validates the user input for updating a user's password according to the specified rules
     public (bool IsValid, string? ErrorMessage) ValidateUpdatedPassword(string password, string confirmPassword)
     {
-        var passwordResult = ValidatePassword(password, confirmPassword);
+        var passwordResult = PasswordValidator.ValidatePassword(password, confirmPassword);
         if (!passwordResult.IsValid){
             return (false, passwordResult.ErrorMessage);
         }
