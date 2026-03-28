@@ -13,4 +13,5 @@ public static class HttpErrorMessages
     public const string INVALID_GAME_ID = "Invalid game ID";
     public const string GAME_ACCESS_DENIED = "Access denied to this game";
     public const string STATISTIC_NOT_FOUND = "Statistic not found";
+    public const string INVALID_TOKEN = "Token is invalid or has expired";
 }

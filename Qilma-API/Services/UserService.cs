@@ -26,7 +26,7 @@ public class UserService : IUserService
     }
 
     // Hashes the password using BCrypt with a work factor of 13
-    private async Task<string> HashPasswordAsync(string password)
+    public static async Task<string> HashPasswordAsync(string password)
     {
         string hashedPassword = await Task.Run(() => BC.EnhancedHashPassword(password, 13));
         return hashedPassword;

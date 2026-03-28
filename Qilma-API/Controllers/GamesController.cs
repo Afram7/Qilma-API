@@ -74,7 +74,7 @@ public class GamesController : ControllerBase
         }
         if (result.Forbidden)
         {
-            return Forbid(result.ErrorMessage!);
+            return StatusCode(403, result.ErrorMessage);
         }
         if (result.Conflict)
         {
