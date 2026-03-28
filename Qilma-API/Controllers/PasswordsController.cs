@@ -16,12 +16,31 @@ public class PasswordsController : ControllerBase
     }
 
     [HttpPost("reset/request")]
-    public async Task<IActionResult> ResetPasswordRequest([FromBody] ResetPasswordRequestDto request)
+    public async Task<IActionResult> ResetPasswordRequest([FromBody] ResetPasswordRequestDTO request)
     {
-        var result = await _passwordService.ResetPasswordRequestAsync(request.Eamil);
+        var result = await _passwordService.ResetPasswordRequestAsync(request);
         if (result.Failed)
         {
             return StatusCode(500, result.ErrorMessage);
+        }
+        if (!result.IsValid)
+        {
+            return BadRequest(result.ErrorMessage);
+        }
+        return Ok(result.SuccessMessage);
+    }
+    
+    [HttpPost("reset/confirm")]
+    public async Task<IActionResult> ResetPasswordConfirm([FromBody] ResetPasswordDTO ResetPasswordDTO)
+    {
+        var result = await _passwordService.ResetPasswordConfirmAsync(ResetPasswordDTO);
+        if (result.Failed)
+        {
+            return StatusCode(500, result.ErrorMessage);
+        }
+        if (result.Forbidden)
+        {
+            return StatusCode(403, result.ErrorMessage);
         }
         if (!result.IsValid)
         {
