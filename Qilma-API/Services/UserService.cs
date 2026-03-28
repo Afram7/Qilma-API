@@ -270,7 +270,7 @@ public class UserService : IUserService
                 };
             }
             
-            var isValidPassword = await PasswordValidator.ValidatePasswordAsync(updatedPassword.CurrentPassword, user.Password);
+            var isValidPassword = await PasswordValidator.VerifyPasswordAsync(updatedPassword.CurrentPassword, user.Password);
             if (!isValidPassword)
             {
                 return new UpdateUserPasswordResult

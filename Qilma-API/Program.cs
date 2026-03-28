@@ -21,12 +21,13 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddTransient<UserValidator>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IGuestService, GuestService>();
 builder.Services.AddScoped<IGameService, GameService>();
+builder.Services.AddScoped<IPasswordService, PasswordService>();
+builder.Services.AddTransient<UserValidator>();
 builder.Services.AddTransient<GameValidator>();
-builder.Services.AddSingleton<WordGenerator>();
+builder.Services.AddTransient<WordGenerator>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(jwtOptions =>
 {
     jwtOptions.TokenValidationParameters = new TokenValidationParameters
@@ -50,6 +51,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         }
     };
 });
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+}); // change later!!
+
 
 var app = builder.Build();
 
@@ -64,6 +70,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
+
+app.UseCors();
 
 app.UseAuthorization();
 
