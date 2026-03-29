@@ -1,76 +1,89 @@
 using Microsoft.EntityFrameworkCore;
+using MimeKit;
 using Qilma_API.Constants;
 using Qilma_API.Data;
 using Qilma_API.DTOs;
 using Qilma_API.Models;
+using Qilma_API.Services.Interfaces;
 using Qilma_API.Validators;
 
 namespace Qilma_API.Services;
 
 public class UserService : IUserService
 {
-
     private readonly UserValidator _userValidator;
+    private readonly PasswordValidator _passwordValidator;
+    private readonly IPasswordService _passwordService;
+    private readonly IStatisticService _statisticService;
+    private readonly IEmailService _emailService;
+    private readonly IGameService _gameService;
     private readonly AppDbContext _db;
+    private readonly ILogger<UserService> _logger;
 
-    public UserService(UserValidator userValidator, AppDbContext db){
+    public UserService(UserValidator userValidator, PasswordValidator passwordValidator, IPasswordService passwordService, IStatisticService statisticService, IEmailService emailService, IGameService gameService, AppDbContext db, ILogger<UserService> logger){
         _userValidator = userValidator;
+        _passwordValidator = passwordValidator;
+        _passwordService = passwordService;
+        _statisticService = statisticService;
+        _emailService = emailService;
+        _gameService = gameService;
         _db = db;
+        _logger = logger;
     }
 
-    // Checks if the email already exists in the database
-    private async Task<bool> CheckEmailExistsAsync(string email)
+    public async Task<bool> CheckEmailExistsAsync(string email)
     {
-        bool emailExists = await _db.Users.AnyAsync(user => user.Email == email);
+        bool emailExists = await _db.Users.AnyAsync(u => u.Email == email);
+
         return emailExists;
     }
 
-    // Hashes the password using BCrypt with a work factor of 13
-    public static async Task<string> HashPasswordAsync(string password)
+    public async Task<string?> GetUserNameByEmailAsync(string email)
     {
-        string hashedPassword = await Task.Run(() => BC.EnhancedHashPassword(password, 13));
-        return hashedPassword;
+        var user = await _db.Users.SingleOrDefaultAsync(u => u.Email == email);
+        
+        return user?.Name;
     }
 
-    // Returns the user with the specified ID, or null if not found
-    private async Task<UserModel?> FetchUserByIdAsync(int id)
+    public async Task<UserModel?> FetchUserByEmailAsync(string email)
     {
-        var user = await _db.Users.FindAsync(id);
+        var user = await _db.Users.SingleOrDefaultAsync(u => u.Email == email);
+
         return user;
     }
-
-    // Returns the user's statistics with the specified ID, or null if not found
-    private async Task<StatisticModel?> FetchUserStatisticsByIdAsync(int id)
+    
+    public async Task<UserModel?> FetchUserByIdAsync(int userId)
     {
-        var statistic = await _db.Statistics.FirstOrDefaultAsync(statistics => statistics.OwnerId == id && statistics.OwnerType == "user");
-        return statistic;
+        var user = await _db.Users.FindAsync(userId);
+
+        return user;
     }
     
     public async Task<CreateUserResult> CreateUserAsync(CreateUserDTO newUser)
     {
-        var validation = _userValidator.ValidateNewUser(newUser);
-        if (!validation.IsValid)
-        {
-            return new CreateUserResult
-            {
-                IsValid = false,
-                ErrorMessage = validation.ErrorMessage
-            };
-        }
-
         try
         {
+            var validation = _userValidator.ValidateNewUser(newUser);
+            if (!validation.IsValid)
+            {
+                return new CreateUserResult
+                {
+                    IsValid = false,
+                    ErrorMessage = validation.ErrorMessage
+                };
+            }
+
             var emailExists = await CheckEmailExistsAsync(newUser.Email);
             if (emailExists)
             {
                 return new CreateUserResult
                 {
                     Conflict = true,
-                    ErrorMessage = HttpErrorMessages.EMAIL_ALREADY_EXISTS
+                    ErrorMessage = ErrorMessages.EMAIL_ALREADY_EXISTS
                 };
             }
 
-            string hashedPassword = await HashPasswordAsync(newUser.Password);
+            string hashedPassword = await _passwordService.HashPasswordAsync(newUser.Password);
             var userModel = new UserModel
             {
                 Name = newUser.Name,
@@ -82,17 +95,7 @@ public class UserService : IUserService
             using var transaction = await _db.Database.BeginTransactionAsync();
             _db.Users.Add(userModel);
             await _db.SaveChangesAsync();
-
-            var statisticModel = new StatisticModel
-            {
-                OwnerId = userModel.UserId,
-                OwnerType = "user",
-                GamesPlayed = 0,
-                GamesWon = 0
-            };
-
-            _db.Statistics.Add(statisticModel);
-            await _db.SaveChangesAsync();
+            await _statisticService.CreateStatisticForNewUserAsync(userModel.UserId);
             await transaction.CommitAsync();
 
             return new CreateUserResult
@@ -109,26 +112,26 @@ public class UserService : IUserService
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            _logger.LogError(ex, "Error creating user with email: {Email}", newUser.Email);
             return new CreateUserResult
             {
                 Failed = true,
-                ErrorMessage = HttpErrorMessages.INTERNAL_ERROR_MESSAGE
+                ErrorMessage = ErrorMessages.INTERNAL_ERROR_MESSAGE
             };
         }
     }
 
-    public async Task<GetUserByIdResult> GetUserByIdAsync(int id)
+    public async Task<GetUserByIdResult> GetUserByIdAsync(int userId)
     {
         try
         {
-            var user = await FetchUserByIdAsync(id);
+            var user = await FetchUserByIdAsync(userId);
             if (user == null)
             {
                 return new GetUserByIdResult
                 {
                     NotFound = true,
-                    ErrorMessage = HttpErrorMessages.USER_NOT_FOUND
+                    ErrorMessage = ErrorMessages.USER_NOT_FOUND
                 };
             }
 
@@ -145,26 +148,26 @@ public class UserService : IUserService
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            _logger.LogError(ex, "Error fetching user with userId: {UserId}", userId);
             return new GetUserByIdResult
             {
                 Failed = true,
-                ErrorMessage = HttpErrorMessages.INTERNAL_ERROR_MESSAGE
+                ErrorMessage = ErrorMessages.INTERNAL_ERROR_MESSAGE
             };
         }
     }
 
-    public async Task<UpdateUserByIdResult> UpdateUserByIdAsync(int id, UpdateUserDTO updatedUser)
+    public async Task<UpdateUserByIdResult> UpdateUserByIdAsync(int userId, UpdateUserDTO updatedUser)
     {
         try
         {
-            var user = await FetchUserByIdAsync(id);
+            var user = await FetchUserByIdAsync(userId);
             if (user == null)
             {
                 return new UpdateUserByIdResult
                 {
                     NotFound = true,
-                    ErrorMessage = HttpErrorMessages.USER_NOT_FOUND
+                    ErrorMessage = ErrorMessages.USER_NOT_FOUND
                 };
             }
 
@@ -178,18 +181,9 @@ public class UserService : IUserService
                 };
             }
 
-            if (updatedUser.Name != null)
-            {
-                user.Name = updatedUser.Name;
-            }
-            if (updatedUser.Age.HasValue)
-            {
-                user.Age = updatedUser.Age.Value;
-            }
-            if (updatedUser.Email != null)
-            {
-                user.Email = updatedUser.Email;
-            }
+            user.Name = updatedUser.Name!;
+            user.Age = updatedUser.Age!.Value;
+            user.Email = updatedUser.Email!;
 
             await _db.SaveChangesAsync();
             
@@ -207,76 +201,82 @@ public class UserService : IUserService
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            _logger.LogError(ex, "Error updating user with userId: {UserId}", userId);
             return new UpdateUserByIdResult
             {
                 Failed = true,
-                ErrorMessage = HttpErrorMessages.INTERNAL_ERROR_MESSAGE
+                ErrorMessage = ErrorMessages.INTERNAL_ERROR_MESSAGE
             };
         }
     }
 
-    public async Task<DeleteUserByIdResult> DeleteUserByIdAsync(int id)
+    public async Task<DeleteUserByIdResult> DeleteUserByIdAsync(int userId)
     {
         try
         {
-            var user = await FetchUserByIdAsync(id);
+            var user = await FetchUserByIdAsync(userId);
             if (user == null)
             {
                 return new DeleteUserByIdResult
                 {
                     NotFound = true,
-                    ErrorMessage = HttpErrorMessages.USER_NOT_FOUND
+                    ErrorMessage = ErrorMessages.USER_NOT_FOUND
                 };
             }
 
             using var transaction = await _db.Database.BeginTransactionAsync();
-            var statistic = await _db.Statistics.FirstOrDefaultAsync(statistics => statistics.OwnerId == user.UserId && statistics.OwnerType == "user");
-            if (statistic != null)
-            {
-                _db.Statistics.Remove(statistic);
-            }
-
-            var games = await _db.Games.Where(game => game.OwnerId == user.UserId && game.OwnerType == "user").ToListAsync();
-            _db.Games.RemoveRange(games);
-
+            await _statisticService.DeleteStatisticForUserAsync(user.UserId);
+            await _gameService.DeleteGamesByUserIdAsync(user.UserId);
             _db.Users.Remove(user);
             await _db.SaveChangesAsync();
             await transaction.CommitAsync();
+
+            var email = user.Email;
+            var name = user.Name;
+            string subject = "Qilma Account Deletion Confirmation";
+            var builder = new BodyBuilder
+            {
+                HtmlBody = File.ReadAllText("Templates/AccountDeleted.html")
+                    .Replace("{{NAME}}", name)
+                    .Replace("{{YEAR}}", DateTime.Now.Year.ToString())
+            };
+
+            await _emailService.SendEmailAsync(email, name, subject, builder);
+
             return new DeleteUserByIdResult();
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            _logger.LogError(ex, "Error deleting user with userId: {UserId}", userId);
             return new DeleteUserByIdResult
             {
                 Failed = true,
-                ErrorMessage = HttpErrorMessages.INTERNAL_ERROR_MESSAGE
+                ErrorMessage = ErrorMessages.INTERNAL_ERROR_MESSAGE
             };
         }
     }
 
-    public async Task<UpdateUserPasswordResult> UpdateUserPasswordAsync(int id, UpdateUserPasswordDTO updatedPassword)
+    public async Task<UpdateUserPasswordResult> UpdateUserPasswordAsync(int userId, UpdateUserPasswordDTO updatedPassword)
     {
         try
         {
-            var user = await FetchUserByIdAsync(id);
+            var user = await FetchUserByIdAsync(userId);
             if (user == null)
             {
                 return new UpdateUserPasswordResult
                 {
                     NotFound = true,
-                    ErrorMessage = HttpErrorMessages.USER_NOT_FOUND
+                    ErrorMessage = ErrorMessages.USER_NOT_FOUND
                 };
             }
             
-            var isValidPassword = await PasswordValidator.VerifyPasswordAsync(updatedPassword.CurrentPassword, user.Password);
+            var isValidPassword = await _passwordValidator.VerifyPasswordAsync(updatedPassword.CurrentPassword, user.Password);
             if (!isValidPassword)
             {
                 return new UpdateUserPasswordResult
                 {
                     IsValid = false,
-                    ErrorMessage = HttpErrorMessages.INVALID_CURRENT_PASSWORD
+                    ErrorMessage = ErrorMessages.INVALID_CURRENT_PASSWORD
                 };
             }
 
@@ -290,9 +290,21 @@ public class UserService : IUserService
                 };
             }
 
-            string hashedPassword = await HashPasswordAsync(updatedPassword.NewPassword);
+            string hashedPassword = await _passwordService.HashPasswordAsync(updatedPassword.NewPassword);
             user.Password = hashedPassword;
             await _db.SaveChangesAsync();
+
+            var email = user.Email;
+            var name = user.Name;
+            string subject = "Qilma Password Update Successful";
+            var builder = new BodyBuilder
+            {
+                HtmlBody = File.ReadAllText("Templates/PasswordUpdated.html")
+                    .Replace("{{NAME}}", name)
+                    .Replace("{{YEAR}}", DateTime.Now.Year.ToString())
+            };
+
+            await _emailService.SendEmailAsync(email, name, subject, builder);
             
             return new UpdateUserPasswordResult
             {
@@ -301,30 +313,30 @@ public class UserService : IUserService
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            _logger.LogError(ex, "Error updating password for userId: {UserId}", userId);
             return new UpdateUserPasswordResult
             {
                 Failed = true,
-                ErrorMessage = HttpErrorMessages.INTERNAL_ERROR_MESSAGE
+                ErrorMessage = ErrorMessages.INTERNAL_ERROR_MESSAGE
             };
         }
     }
 
-    public async Task<GetStatistcsResult> GetUserStatistcsAsync(int id)
+    public async Task<GetStatisticsResult> GetUserStatistcsAsync(int userId)
     {
         try
         {
-            var statistic = await FetchUserStatisticsByIdAsync(id);
+            var statistic = await _statisticService.FetchUserStatisticsByIdAsync(userId);
             if (statistic == null)
             {
-                return new GetStatistcsResult
+                return new GetStatisticsResult
                 {
                     NotFound = true,
-                    ErrorMessage = HttpErrorMessages.STATISTIC_NOT_FOUND
+                    ErrorMessage = ErrorMessages.STATISTIC_NOT_FOUND
                 };
             }
             
-            return new GetStatistcsResult
+            return new GetStatisticsResult
             {
                 Statistic = new StatisticDTO
                 {
@@ -338,11 +350,11 @@ public class UserService : IUserService
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
-            return new GetStatistcsResult
+            _logger.LogError(ex, "Error fetching statistics for userId: {UserId}", userId);
+            return new GetStatisticsResult
             {
                 Failed = true,
-                ErrorMessage = HttpErrorMessages.INTERNAL_ERROR_MESSAGE
+                ErrorMessage = ErrorMessages.INTERNAL_ERROR_MESSAGE
             };
         }
     }

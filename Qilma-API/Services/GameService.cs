@@ -1,9 +1,9 @@
-using CrypticWizard.RandomWordGenerator;
 using Microsoft.EntityFrameworkCore;
 using Qilma_API.Constants;
 using Qilma_API.Data;
 using Qilma_API.DTOs;
 using Qilma_API.Models;
+using Qilma_API.Services.Interfaces;
 using Qilma_API.Validators;
 
 namespace Qilma_API.Services;
@@ -12,44 +12,25 @@ public class GameService : IGameService
 {
     private const int MAX_ATTEMPTS = 7;
     private readonly GameValidator _gameValidator;
-    private readonly WordGenerator _wordGenerator;
+    private readonly IWordService _wordService;
+    private readonly IStatisticService _statisticService;
     private readonly AppDbContext _db;
+    private readonly ILogger<GameService> _logger;
 
-    public GameService(WordGenerator wordGenerator, GameValidator gameValidator, AppDbContext db)
+    public GameService(GameValidator gameValidator, IWordService wordService, IStatisticService statisticService, AppDbContext db, ILogger<GameService> logger)
     {
         _gameValidator = gameValidator;
-        _wordGenerator = wordGenerator;
+        _wordService = wordService;
+        _statisticService = statisticService;
         _db = db;
-    }
-
-    // Generates a random 5-letter valid english word
-    private string GenerateRandomWord()
-    {
-        string? word = null;
-        int attempts = 0;
-        const int maxAttempts = 300;
-        while((word == null || word.Length != 5) && attempts < maxAttempts)
-        {
-            try
-            {
-                word = _wordGenerator.GetWord();
-            }
-            catch{}
-            attempts++;
-        }
-
-        if (word == null || word.Length != 5)
-        {
-            throw new Exception ("Failed to generate a valid word");
-        }
-
-        return word;
+        _logger = logger;
     }
 
     // Returns the game with the specified ID, or null if not found
-    private async Task<GameModel?> FetchGameByIdAsync(int id)
+    private async Task<GameModel?> FetchGameByIdAsync(int gameId)
     {
-        var game = await _db.Games.FindAsync(id);
+        var game = await _db.Games.FindAsync(gameId);
+
         return game;
     }
 
@@ -105,7 +86,7 @@ public class GameService : IGameService
     {
         try
         {
-            var word = GenerateRandomWord();
+            var word = await _wordService.GenerateRandomWordAsync();
             var gameModel = new GameModel
             {
                 OwnerId = ownerId,
@@ -113,19 +94,13 @@ public class GameService : IGameService
                 Attempts = 0,
                 Word = word,
                 Date = DateTime.UtcNow,
-                Result = "pending"
+                Result = GameStatus.Pending
             };
 
             using var transaction = await _db.Database.BeginTransactionAsync();
-            var statistic = await _db.Statistics.FirstOrDefaultAsync(statistics => statistics.OwnerId == ownerId && statistics.OwnerType == ownerType);
-            if (statistic != null)
-            {
-                statistic.GamesPlayed++;
-            }
-
+            await _statisticService.UpdateStatisticsForNewGameAsync(ownerId, ownerType);
             _db.Games.Add(gameModel);
             await _db.SaveChangesAsync();
-
             await transaction.CommitAsync();
 
             return new CreateGameResult
@@ -143,11 +118,11 @@ public class GameService : IGameService
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            _logger.LogError(ex, "Error creating game for ownerId: {OwnerId}", ownerId);
             return new CreateGameResult
             {
                 Failed = true,
-                ErrorMessage = HttpErrorMessages.INTERNAL_ERROR_MESSAGE
+                ErrorMessage = ErrorMessages.INTERNAL_ERROR_MESSAGE
             };
         }
     }
@@ -161,7 +136,7 @@ public class GameService : IGameService
                 return new SubmitGuessResult
                 {
                     IsValid = false,
-                    ErrorMessage = HttpErrorMessages.INVALID_GAME_ID
+                    ErrorMessage = ErrorMessages.INVALID_GAME_ID
                 };
             }
             
@@ -171,23 +146,23 @@ public class GameService : IGameService
                 return new SubmitGuessResult
                 {
                     NotFound = true,
-                    ErrorMessage = HttpErrorMessages.GAME_NOT_FOUND
+                    ErrorMessage = ErrorMessages.GAME_NOT_FOUND
                 };
             }
-            if (game.OwnerType == "guest" && game.OwnerId != guestId)
+            if (game.OwnerType == OwnerTypes.Guest && game.OwnerId != guestId)
             {
                 return new SubmitGuessResult
                 {
                     Forbidden = true,
-                    ErrorMessage = HttpErrorMessages.GAME_ACCESS_DENIED
+                    ErrorMessage = ErrorMessages.GAME_ACCESS_DENIED
                 };
             }
-            if (game.Result != "pending")
+            if (game.Result != GameStatus.Pending)
             {
                 return new SubmitGuessResult
                 {
                     Conflict = true,
-                    ErrorMessage = HttpErrorMessages.GAME_ALREADY_FINISHED
+                    ErrorMessage = ErrorMessages.GAME_ALREADY_FINISHED
                 };
             }
 
@@ -203,50 +178,57 @@ public class GameService : IGameService
 
             using var transaction = await _db.Database.BeginTransactionAsync();
             game.Attempts++;
-
             var resultArray = CalculateGuessResult(guessWord, game.Word);
 
             if (guessWord.Equals(game.Word, StringComparison.OrdinalIgnoreCase))
             {
-                game.Result = "win";
-                var statistic = await _db.Statistics.FirstOrDefaultAsync(statistics => statistics.OwnerId == game.OwnerId && statistics.OwnerType == game.OwnerType);
-                if (statistic != null)
-                {
-                    statistic.GamesWon++;
-                }
+                game.Result = GameStatus.Win;
+                await _statisticService.UpdateStatisticsForGameWinAsync(game.OwnerId, game.OwnerType);
             }
             else if (game.Attempts >= MAX_ATTEMPTS)
             {
-                game.Result = "lose";
+                game.Result = GameStatus.Lose;
             }
 
             await _db.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            var guessResult = new GuessResultDTO
-            {
-                GameId = game.GameId,
-                GuessWord = guessWord,
-                Result = resultArray,
-                AttemptsLeft = MAX_ATTEMPTS - game.Attempts,
-                GameOver = game.Result != "pending",
-                CorrectWord = game.Result != "pending" ? game.Word : null
-            };
-
             return new SubmitGuessResult
             {
                 IsValid = true,
-                GuessResult = guessResult
+                GuessResult = new GuessResultDTO
+                {
+                    GameId = game.GameId,
+                    GuessWord = guessWord,
+                    Result = resultArray,
+                    AttemptsLeft = MAX_ATTEMPTS - game.Attempts,
+                    GameOver = game.Result != GameStatus.Pending,
+                    CorrectWord = game.Result != GameStatus.Pending ? game.Word : null
+                }
             };
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            _logger.LogError(ex, "Error submitting guess for gameId: {GameId}", gameId);
             return new SubmitGuessResult
             {
                 Failed = true,
-                ErrorMessage = HttpErrorMessages.INTERNAL_ERROR_MESSAGE
+                ErrorMessage = ErrorMessages.INTERNAL_ERROR_MESSAGE
             };
+        }
+    }
+
+    public async Task DeleteGamesByUserIdAsync(int userId)
+    {
+        try
+        {
+            var games = await _db.Games.Where(g => g.OwnerId == userId && g.OwnerType == OwnerTypes.User).ToListAsync();
+            _db.Games.RemoveRange(games);
+            await _db.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting games for userId: {UserId}", userId);
         }
     }
 }

@@ -1,47 +1,33 @@
-using Microsoft.EntityFrameworkCore;
 using Qilma_API.Constants;
 using Qilma_API.Data;
 using Qilma_API.DTOs;
 using Qilma_API.Models;
+using Qilma_API.Services.Interfaces;
 
 namespace Qilma_API.Services;
 
 public class GuestService : IGuestService
 {
-
     private readonly AppDbContext _db;
+    private readonly IStatisticService _statisticService;
+    private readonly ILogger<GuestService> _logger;
 
-    public GuestService(AppDbContext db)
+    public GuestService(AppDbContext db, IStatisticService statisticService, ILogger<GuestService> logger)
     {
         _db = db;
+        _statisticService = statisticService;
+        _logger = logger;
     }
 
-    // Returns the guest's statistics with the specified ID, or null if not found
-    private async Task<StatisticModel?> FetchGuestStatisticsByIdAsync(int id)
-    {
-        var statistic = await _db.Statistics.FirstOrDefaultAsync(statistics => statistics.OwnerId == id && statistics.OwnerType == "guest");
-        return statistic;
-    }
     public async Task<CreateGuestResult> CreateGuestAsync()
     {
         try
         {
             var guestModel = new GuestModel();
-
             using var transaction = await _db.Database.BeginTransactionAsync();
             _db.Guests.Add(guestModel);
             await _db.SaveChangesAsync();
-
-            var statisticModel = new StatisticModel
-            {
-                OwnerId = guestModel.GuestId,
-                OwnerType = "guest",
-                GamesPlayed = 0,
-                GamesWon = 0
-            };
-
-            _db.Statistics.Add(statisticModel);
-            await _db.SaveChangesAsync();
+            await _statisticService.CreateStatisticForNewGuestAsync(guestModel.GuestId);
             await transaction.CommitAsync();
 
             return new CreateGuestResult
@@ -54,30 +40,30 @@ public class GuestService : IGuestService
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            _logger.LogError(ex, "Error creating guest");
             return new CreateGuestResult
             {
                 Failed = true,
-                ErrorMessage = HttpErrorMessages.INTERNAL_ERROR_MESSAGE
+                ErrorMessage = ErrorMessages.INTERNAL_ERROR_MESSAGE
             };
         }
     }
 
-    public async Task<GetStatistcsResult> GetGuestStatistcsAsync(int id)
+    public async Task<GetStatisticsResult> GetGuestStatistcsAsync(int guestId)
     {
         try
         {
-            var statistic = await FetchGuestStatisticsByIdAsync(id);
+            var statistic = await _statisticService.FetchGuestStatisticsByIdAsync(guestId);
             if (statistic == null)
             {
-                return new GetStatistcsResult
+                return new GetStatisticsResult
                 {
                     NotFound = true,
-                    ErrorMessage = HttpErrorMessages.STATISTIC_NOT_FOUND
+                    ErrorMessage = ErrorMessages.STATISTIC_NOT_FOUND
                 };
             }
 
-            return new GetStatistcsResult
+            return new GetStatisticsResult
             {
                 Statistic = new StatisticDTO
                 {
@@ -91,11 +77,11 @@ public class GuestService : IGuestService
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
-            return new GetStatistcsResult
+            _logger.LogError(ex, "Error fetching statistics for guestId: {GuestId}", guestId);
+            return new GetStatisticsResult
             {
                 Failed = true,
-                ErrorMessage = HttpErrorMessages.INTERNAL_ERROR_MESSAGE
+                ErrorMessage = ErrorMessages.INTERNAL_ERROR_MESSAGE
             };
         }
     }

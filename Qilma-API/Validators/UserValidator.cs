@@ -1,6 +1,4 @@
 using Qilma_API.DTOs;
-using System.Net.Mail;
-using System.Text.RegularExpressions;
 
 namespace Qilma_API.Validators;
 
@@ -10,6 +8,14 @@ public class UserValidator
     private const int MAX_NAME_LENGTH = 30;
     private const int MIN_AGE_LENGTH = 6;
     private const int MAX_AGE_LENGTH = 120;
+    private readonly EmailValidator _emailValidator;
+    private readonly PasswordValidator _passwordValidator;
+
+    public UserValidator(EmailValidator emailValidator, PasswordValidator passwordValidator)
+    {
+        _emailValidator = emailValidator;
+        _passwordValidator = passwordValidator;
+    }
 
     private (bool IsValid, string? ErrorMessage) ValidateName(string name)
     {
@@ -37,6 +43,7 @@ public class UserValidator
         {
             return (false, "No double spaces");
         }
+
         return (true, null);
     }
 
@@ -45,17 +52,13 @@ public class UserValidator
         if (age < 0){
             return (false, "Age cannot be negative");
         }
-
         if (age < MIN_AGE_LENGTH){
             return (false, "Age must be 6+");
         }
-
         if (age > MAX_AGE_LENGTH){
             return (false, "Age is too high");
         }
-        if (!int.TryParse(age.ToString(), out _)){
-            return (false, "Age must be a number");
-        }
+
         return (true, null);
     }
 
@@ -74,16 +77,17 @@ public class UserValidator
             return (false, ageResult.ErrorMessage);         
         }
 
-        var emailResult = EmailValidator.ValidateEmail(newUser.Email);
+        var emailResult = _emailValidator.ValidateEmail(newUser.Email);
         if (!emailResult.IsValid)
         {
             return (false, emailResult.ErrorMessage);
         }
 
-        var passwordResult = PasswordValidator.ValidatePassword(newUser.Password, newUser.ConfirmPassword);
+        var passwordResult = _passwordValidator.ValidatePassword(newUser.Password, newUser.ConfirmPassword);
         if (!passwordResult.IsValid){
             return (false, passwordResult.ErrorMessage);
         }
+
         return (true, null);
     }
 
@@ -110,22 +114,24 @@ public class UserValidator
 
         if (updatedUser.Email != null)
         {
-            var emailResult = EmailValidator.ValidateEmail(updatedUser.Email);
+            var emailResult = _emailValidator.ValidateEmail(updatedUser.Email);
             if (!emailResult.IsValid)
             {
                 return (false, emailResult.ErrorMessage);
             }
         }
+        
         return (true, null);
     }
 
     // Validates the user input for updating a user's password according to the specified rules
     public (bool IsValid, string? ErrorMessage) ValidateUpdatedPassword(string password, string confirmPassword)
     {
-        var passwordResult = PasswordValidator.ValidatePassword(password, confirmPassword);
+        var passwordResult = _passwordValidator.ValidatePassword(password, confirmPassword);
         if (!passwordResult.IsValid){
             return (false, passwordResult.ErrorMessage);
         }
+        
         return (true, null);
     }
 }

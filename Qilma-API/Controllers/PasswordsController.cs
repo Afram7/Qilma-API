@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Qilma_API.DTOs;
-using Qilma_API.Services;
+using Qilma_API.Services.Interfaces;
 
 namespace Qilma_API.Controllers;
 
@@ -27,6 +27,7 @@ public class PasswordsController : ControllerBase
         {
             return BadRequest(result.ErrorMessage);
         }
+
         return Ok(result.SuccessMessage);
     }
     
@@ -46,6 +47,7 @@ public class PasswordsController : ControllerBase
         {
             return BadRequest(result.ErrorMessage);
         }
+        
         return Ok(result.SuccessMessage);
     }
 }

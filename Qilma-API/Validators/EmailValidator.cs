@@ -2,15 +2,14 @@ using System.Net.Mail;
 
 namespace Qilma_API.Validators;
 
-public static class EmailValidator
+public class EmailValidator
 {
     private const int MIN_EMAIL_LENGTH = 5;
     private const int MAX_EMAIL_LENGTH = 254;
 
-    public static (bool IsValid, string? ErrorMessage) ValidateEmail(string email)
+    public (bool IsValid, string? ErrorMessage) ValidateEmail(string email)
     {
         var trimmedEmail = email.Trim();
-
         if (string.IsNullOrWhiteSpace(trimmedEmail))
         {
             return (false, "Email is required");
@@ -33,9 +32,8 @@ public static class EmailValidator
             var mailAddress = new MailAddress(trimmedEmail);
             return (true, null);
         }
-        catch (FormatException ex)
+        catch
         {
-            Console.WriteLine(ex.Message);
             return (false, "Invalid email");
         }
     }

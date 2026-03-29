@@ -10,7 +10,7 @@ public class StatisticDTO
     required public int GamesWon { get; set; }
 }
 
-public class GetStatistcsResult
+public class GetStatisticsResult
 {
     public bool NotFound { get; set; }
     public bool Failed { get; set; }

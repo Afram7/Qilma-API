@@ -7,9 +7,9 @@ public class GameValidator
     private const int WORD_LENGTH = 5;
     private readonly WordList _wordList;
     
-    public GameValidator()
+    public GameValidator(WordList wordList)
     {
-        _wordList = WordList.CreateFromFiles("Dictionaries/en_US.dic");
+        _wordList = wordList;
     }
 
     private (bool IsValid, string? ErrorMessage) ValidateWord(string word)
@@ -29,6 +29,7 @@ public class GameValidator
         {
             return (false, "Word not recognized");
         }
+
         return (true, null);
     }
 
@@ -39,6 +40,7 @@ public class GameValidator
         if (!wordResult.IsValid){
             return (false, wordResult.ErrorMessage);
         }
+        
         return (true, null);
     }
 }

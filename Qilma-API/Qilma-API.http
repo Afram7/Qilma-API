@@ -1,16 +1,98 @@
 @Qilma_API_HostAddress = http://localhost:5164
 
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIxMyIsIk5hbWUiOiJBZnJhbSBIYXJvdW4iLCJFbWFpbCI6ImFmcmFtaGFyb25AaG90bWFpbC5jb20iLCJBZ2UiOiIyNiIsImlzcyI6IlFpbG1hQVBJIiwiYXVkIjoiUWlsbWFBUElVc2VycyJ9.OkGoUj7LLD2IJR5cLV_rZ6VzHLpKq39eI4Xx7Xo_rjo
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiIxNyIsIk5hbWUiOiJBZnJhbSBIYXJvdW4iLCJFbWFpbCI6ImFmcmFtaGFyb25AaG90bWFpbC5jb20iLCJBZ2UiOiIyNiIsImlzcyI6IlFpbG1hQVBJIiwiYXVkIjoiUWlsbWFBUElVc2VycyJ9.smQEF_qhnhKB9QRjei34Mmc_aybkaaxNDMPZgWD3094
 
 @invalidToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOiI0IiwiTmFtZSI6IkFmcmFtIEhhcm91biIsIkVtYWlsIjoiYWZyYW1oYXJvbkBob3RtYWlsLmNvbSIsIkFnZSI6IjI2IiwiaXNzIjoiUWlsbWFBUEkiLCJhdWQiOiJRaWxtYUFQSVVzZXJzIn0.zn0oT7tEQjTd6hroFYV2geG4-3Qakme-Jbrnu0v8ZvQ
 
-GET {{Qilma_API_HostAddress}}/users/me
-Authorization: Bearer {{invalidToken}}
+
+
+
+// Game API Endpoints
+
+POST {{Qilma_API_HostAddress}}/games
+# Authorization: Bearer {{invalidToken}}
+# X-Guest-Id: 8
 
 ###
 
-PUT  {{Qilma_API_HostAddress}}/users/me
-Authorization: Bearer {{invalidToken}}
+POST  {{Qilma_API_HostAddress}}/games/{gameId}/guess
+# Authorization: Bearer {{invalidToken}}
+# X-Guest-Id: 8
+Content-Type: application/json
+
+{
+    "word": ""
+}
+
+###
+
+// Guest API Endpoints
+
+POST {{Qilma_API_HostAddress}}/guests
+
+###
+
+GET {{Qilma_API_HostAddress}}/guests/me/statistics
+# X-Guest-Id: 8
+
+###
+
+// Password API Endpoints
+
+POST {{Qilma_API_HostAddress}}/passwords/reset/request
+Content-Type: application/json
+
+{
+    "email": ""
+}
+
+###
+
+POST {{Qilma_API_HostAddress}}/passwords/reset/confirm
+Content-Type: application/json
+
+{
+    "newPassword": "",
+    "confirmPassword": "",
+    "token": ""
+}
+
+###
+
+// Token API Endpoints
+
+POST {{Qilma_API_HostAddress}}/tokens
+Content-Type: application/json
+
+{
+    "email": "aframharon@hotmail.com",
+    "password": "@Fram12345"
+}
+
+###
+
+// User API Endpoints
+
+POST {{Qilma_API_HostAddress}}/users
+Content-Type: application/json
+
+{
+    "name": "",
+    "age": 2,
+    "email": "",
+    "password": "",
+    "confirmPassword": ""
+}
+
+###
+
+GET {{Qilma_API_HostAddress}}/users/me
+# Authorization: Bearer {{invalidToken}}
+
+###
+
+PUT {{Qilma_API_HostAddress}}/users/me
+# Authorization: Bearer {{invalidToken}}
 Content-Type: application/json
 
 {
@@ -22,43 +104,24 @@ Content-Type: application/json
 ###
 
 DELETE {{Qilma_API_HostAddress}}/users/me
-Authorization: Bearer {{invalidToken}}
+# Authorization: Bearer {{invalidToken}}
 
 ###
 
-PUT  {{Qilma_API_HostAddress}}/users/me/password
-Authorization: Bearer {{invalidToken}}
+PUT {{Qilma_API_HostAddress}}/users/me/password
+# Authorization: Bearer {{invalidToken}}
 Content-Type: application/json
 
 {
-    "currentPassword": "@Fram12345",
-    "newPassword": "@Fram12345",
-    "confirmPassword": "@Fram12345"
-}
-
-###
-
-POST {{Qilma_API_HostAddress}}/games
-# Authorization: Bearer {{token}}
-# X-Guest-Id: 4
-
-###
-
-POST  {{Qilma_API_HostAddress}}/games/16/guess
-# Authorization: Bearer {{token}}
-# X-Guest-Id: 4
-Content-Type: application/json
-
-{
-    "word": ""
+    "currentPassword": "",
+    "newPassword": "",
+    "confirmPassword": ""
 }
 
 ###
 
 GET {{Qilma_API_HostAddress}}/users/me/statistics
-Authorization: Bearer {{token}}
+# Authorization: Bearer {{invalidToken}}
 
 ###
 
-GET {{Qilma_API_HostAddress}}/guests/me/statistics
-X-Guest-Id: 4

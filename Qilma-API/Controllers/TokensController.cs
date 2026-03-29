@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Qilma_API.DTOs;
-using Qilma_API.Services;
+using Qilma_API.Services.Interfaces;
 
 namespace Qilma_API.Controllers;
 
@@ -8,7 +8,6 @@ namespace Qilma_API.Controllers;
 [ApiController]
 public class TokensController : ControllerBase
 {
-    
     private readonly ITokenService _tokenService;
 
     public TokensController(ITokenService tokenService)
@@ -19,7 +18,7 @@ public class TokensController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> GenerateToken([FromBody] TokenRequestDTO request)
     {
-        var result = await _tokenService.GenerateTokenAsync(request.Email, request.Password);
+        var result = await _tokenService.GenerarteSignInTokenAsync(request.Email, request.Password);
         if (result.Failed)
         {
             return StatusCode(500, result.ErrorMessage);
@@ -28,6 +27,7 @@ public class TokensController : ControllerBase
         {
             return Unauthorized(result.ErrorMessage);
         }
+        
         return Ok(result.TokenResponse);
     }
 }

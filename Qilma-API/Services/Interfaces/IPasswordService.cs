@@ -1,6 +1,6 @@
 using Qilma_API.DTOs;
 
-namespace Qilma_API.Services;
+namespace Qilma_API.Services.Interfaces;
 
 public interface IPasswordService
 {
@@ -9,4 +9,10 @@ public interface IPasswordService
 
     // Confirm password reset
     Task<ResetPasswordResult> ResetPasswordConfirmAsync(ResetPasswordDTO resetPasswordDTO);
+
+    // Update the user's password in the database by their email
+    Task UpdatePasswordByEmailAsync(string email, string newPassword);
+
+    // Hashes the password using BCrypt
+    Task<string> HashPasswordAsync(string password);
 }
