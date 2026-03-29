@@ -1,6 +1,6 @@
 using Qilma_API.DTOs;
 
-namespace Qilma_API.Services;
+namespace Qilma_API.Services.Interfaces;
 
 public interface IGuestService
 {
@@ -8,5 +8,5 @@ public interface IGuestService
     Task<CreateGuestResult> CreateGuestAsync();
 
     // Get guest's statistics
-    Task<GetStatistcsResult> GetGuestStatistcsAsync(int id);
+    Task<GetStatisticsResult> GetGuestStatistcsAsync(int guestId);
 }

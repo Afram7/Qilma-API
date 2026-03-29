@@ -2,20 +2,20 @@ using System.Text.RegularExpressions;
 
 namespace Qilma_API.Validators;
 
-public static class PasswordValidator
+public class PasswordValidator
 {
-
     private const int MIN_PASSWORD_LENGTH = 8;
 
     // Checks if the provided password matches the hashed password stored in the database
-    public static async Task<bool> VerifyPasswordAsync(string password, string hashedPassword)
+    public Task<bool> VerifyPasswordAsync(string password, string hashedPassword)
     {
-        bool isValidPassword = await Task.Run(() => BC.EnhancedVerify(password, hashedPassword));
-        return isValidPassword;
+        bool isValidPassword = BC.EnhancedVerify(password, hashedPassword);
+
+        return Task.FromResult(isValidPassword);
     }
 
     // Validates the password based on certain criteria such as length, character types, and confirmation match
-    public static (bool IsValid, string? ErrorMessage) ValidatePassword(string password, string confirmPassword)
+    public (bool IsValid, string? ErrorMessage) ValidatePassword(string password, string confirmPassword)
     {
         if (string.IsNullOrWhiteSpace(password))
         {
@@ -45,6 +45,7 @@ public static class PasswordValidator
         {
             return (false, "Need special character");
         }
+        
         return (true, null);
     }
 }

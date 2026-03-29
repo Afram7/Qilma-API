@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Qilma_API.Services;
+using Qilma_API.Services.Interfaces;
 
 namespace Qilma_API.Controllers;
 
@@ -7,7 +7,6 @@ namespace Qilma_API.Controllers;
 [ApiController]
 public class GuestsController : ControllerBase
 {
-    
     private readonly IGuestService _guestService;
 
     public GuestsController(IGuestService guestService)
@@ -23,6 +22,7 @@ public class GuestsController : ControllerBase
         {
             return StatusCode(500, result.ErrorMessage);
         }
+
         return Created("", result.Guest);
     }
 
@@ -44,6 +44,7 @@ public class GuestsController : ControllerBase
         {
             return NotFound();
         }
+        
         return Ok(result.Statistic);
     }
 }

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Qilma_API.DTOs;
-using Qilma_API.Services;
+using Qilma_API.Services.Interfaces;
 
 namespace Qilma_API.Controllers;
 
@@ -9,7 +9,6 @@ namespace Qilma_API.Controllers;
 [ApiController]
 public class UsersController : ControllerBase
 {
-
     private readonly IUserService _userService;
 
     public UsersController(IUserService userService)
@@ -33,6 +32,7 @@ public class UsersController : ControllerBase
         {
             return Conflict(result.ErrorMessage);
         }
+
         return CreatedAtAction(nameof(GetUserById), new { id = result.User!.UserId }, result.User);
     }
 
@@ -50,6 +50,7 @@ public class UsersController : ControllerBase
         {
             return NotFound(result.ErrorMessage);
         }
+
         return Ok(result.User);
     }
 
@@ -70,6 +71,7 @@ public class UsersController : ControllerBase
         {
             return NotFound(result.ErrorMessage);
         }
+
         return Ok(result.User);
     }
 
@@ -87,6 +89,7 @@ public class UsersController : ControllerBase
         {
             return NotFound(result.ErrorMessage);
         }
+
         return NoContent();
     }
 
@@ -108,6 +111,7 @@ public class UsersController : ControllerBase
         {
             return BadRequest(result.ErrorMessage);
         }
+
         return Ok();
     }
 
@@ -125,6 +129,7 @@ public class UsersController : ControllerBase
         {
             return NotFound(result.ErrorMessage);
         }
+        
         return Ok(result.Statistic);
     }
 }

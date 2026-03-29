@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Qilma_API.Constants;
 using Qilma_API.DTOs;
-using Qilma_API.Services;
+using Qilma_API.Services.Interfaces;
 
 namespace Qilma_API.Controllers;
 
@@ -8,7 +9,6 @@ namespace Qilma_API.Controllers;
 [ApiController]
 public class GamesController : ControllerBase
 {
-
     private readonly IGameService _gameService;
 
     public GamesController(IGameService gameService)
@@ -24,12 +24,12 @@ public class GamesController : ControllerBase
         if (User.Identity?.IsAuthenticated == true)
         {
             ownerId = int.Parse(User.FindFirst("UserId")!.Value);
-            ownerType = "user";
+            ownerType = OwnerTypes.User;
         }
         else if (Request.Headers.TryGetValue("X-Guest-Id", out var guestId))
         {
             ownerId = int.Parse(guestId!);
-            ownerType = "guest";
+            ownerType = OwnerTypes.Guest;
         }
         else
         {
@@ -41,6 +41,7 @@ public class GamesController : ControllerBase
         {
             return StatusCode(500, result.ErrorMessage);
         }
+        
         return Created("", result.Game);
     }
 
@@ -84,6 +85,7 @@ public class GamesController : ControllerBase
         {
             return UnprocessableEntity(result.ErrorMessage);
         }
+
         return Ok(result.GuessResult);
     }
 }

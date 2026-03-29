@@ -1,6 +1,6 @@
 using Qilma_API.DTOs;
 
-namespace Qilma_API.Services;
+namespace Qilma_API.Services.Interfaces;
 
 public interface IGameService
 {
@@ -9,4 +9,7 @@ public interface IGameService
 
     // Submit a guess for a specific game
     Task<SubmitGuessResult> SubmitGuessAsync(int guestId, int gameId, string guessWord);
+
+    // Delete all games associated with a specific user
+    Task DeleteGamesByUserIdAsync(int userId);
 }
