@@ -10,8 +10,23 @@ using Qilma_API.Services.Interfaces;
 using Qilma_API.Settings;
 using Qilma_API.Validators;
 using WeCantSpell.Hunspell;
+using DotNetEnv;
+
+Env.Load(".env");
 
 var builder = WebApplication.CreateBuilder(args);
+
+var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? throw new Exception("DB_PASSWORD environment variable not set");
+var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? throw new Exception("JWT_KEY environment variable not set");
+var emailAddress = Environment.GetEnvironmentVariable("EMAIL_ADDRESS") ?? throw new Exception("EMAIL_ADDRESS environment variable not set");
+var emailAppPassword = Environment.GetEnvironmentVariable("EMAIL_APP_PASSWORD") ?? throw new Exception("EMAIL_APP_PASSWORD environment variable not set");
+var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? throw new Exception("FRONTEND_URL environment variable not set");
+builder.Configuration["ConnectionStrings:DefaultConnection"] = builder.Configuration["ConnectionStrings:DefaultConnection"]!.Replace("{__DB_PASSWORD__}", dbPassword);
+builder.Configuration["Jwt:Key"] = jwtKey;
+builder.Configuration["Email:SenderAddress"] = emailAddress;
+builder.Configuration["Email:AppPassword"] = emailAppPassword;
+builder.Configuration["frontendUrl:Url"] = frontendUrl;
+
 
 // -------------------- Controllers & Swagger --------------------
 builder.Services.AddControllers();
@@ -75,11 +90,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 // -------------------- CORS --------------------
 
-var frontendUrl = builder.Configuration["FrontendUrl:Url"];
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
-        policy.WithOrigins(frontendUrl!)
+        policy.WithOrigins(builder.Configuration["FrontendUrl:Url"]!)
             .AllowAnyHeader()
             .AllowAnyMethod());
 });
