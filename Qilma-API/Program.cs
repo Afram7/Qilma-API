@@ -16,15 +16,31 @@ Env.Load(".env");
 
 var builder = WebApplication.CreateBuilder(args);
 
+// -------------------- Environment Variables --------------------
+
+// Database:
 var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? throw new Exception("DB_PASSWORD environment variable not set");
+
+// JWT
 var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? throw new Exception("JWT_KEY environment variable not set");
+
+// Email settings
+var name = Environment.GetEnvironmentVariable("EMAIL_SENDER_NAME") ?? throw new Exception("EMAIL_SENDER_NAME environment variable not set");
 var emailAddress = Environment.GetEnvironmentVariable("EMAIL_ADDRESS") ?? throw new Exception("EMAIL_ADDRESS environment variable not set");
 var emailAppPassword = Environment.GetEnvironmentVariable("EMAIL_APP_PASSWORD") ?? throw new Exception("EMAIL_APP_PASSWORD environment variable not set");
+var smtpHost = Environment.GetEnvironmentVariable("SMTP_HOST") ?? throw new Exception("SMTP_HOST environment variable not set");
+var smtpPort = Environment.GetEnvironmentVariable("SMPT_PORT") ?? throw new Exception("SMPT_PORT environment variable not set");
+
+// Frontend URL
 var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? throw new Exception("FRONTEND_URL environment variable not set");
+
 builder.Configuration["ConnectionStrings:DefaultConnection"] = builder.Configuration["ConnectionStrings:DefaultConnection"]!.Replace("{__DB_PASSWORD__}", dbPassword);
 builder.Configuration["Jwt:Key"] = jwtKey;
+builder.Configuration["Email:EmailSenderName"] = name;
 builder.Configuration["Email:SenderAddress"] = emailAddress;
 builder.Configuration["Email:AppPassword"] = emailAppPassword;
+builder.Configuration["Email:SmtpHost"] = smtpHost;
+builder.Configuration["Email:SmtpPort"] = smtpPort;
 builder.Configuration["frontendUrl:Url"] = frontendUrl;
 
 

@@ -86,9 +86,15 @@ POST /passwords/reset/confirm
 
 ```
 DB_PASSWORD=your_db_password
+
 JWT_KEY=your_jwt_key
+
+EMAIL_SENDER_NAME=Your_name
 EMAIL_ADDRESS=your_email_address
 EMAIL_APP_PASSWORD=your_email_app_password
+SMTP_HOST=your_smtp_host
+SMPT_PORT=your_smtp_port
+
 FRONTEND_URL=your_frontend_url
 
 ```
